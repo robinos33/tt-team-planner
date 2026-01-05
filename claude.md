@@ -11,7 +11,7 @@ Extension WordPress pour gérer le déplacement de joueurs dans des équipes sur
 ### Backend (PHP)
 - **Version minimale** : PHP 8.1
 - **Framework** : WordPress Plugin API
-- **Architecture** : Orientée objet, respect des standards WordPress
+- **Architecture** : Domain-Driven Design (DDD), orientée objet, respect des standards WordPress
 - **Tests** : Tests unitaires obligatoires avec PHPUnit
 
 ### Frontend
@@ -69,12 +69,24 @@ Extension WordPress pour gérer le déplacement de joueurs dans des équipes sur
 ```
 tableau-equipes/
 ├── tableau-equipes.php          # Fichier principal du plugin
-├── includes/                     # Classes PHP
-│   ├── class-plugin.php
-│   ├── class-equipe.php
-│   ├── class-joueur.php
-│   └── class-journee.php
+├── src/                          # Code source (Architecture DDD)
+│   ├── Domain/                  # Couche Domaine
+│   │   ├── Entity/              # Entités du domaine
+│   │   │   ├── Equipe.php
+│   │   │   ├── Joueur.php
+│   │   │   └── Journee.php
+│   │   ├── ValueObject/         # Value Objects
+│   │   ├── Repository/          # Interfaces des repositories
+│   │   └── Service/             # Services métier
+│   ├── Infrastructure/          # Couche Infrastructure
+│   │   ├── Persistence/         # Implémentation des repositories
+│   │   └── WordPress/           # Adaptateurs WordPress
+│   └── Application/             # Couche Application
+│       ├── UseCase/             # Cas d'utilisation
+│       └── DTO/                 # Data Transfer Objects
 ├── admin/                        # Interface admin WordPress
+│   ├── views/                   # Templates admin
+│   └── class-admin-controller.php
 ├── public/                       # Fichiers publics
 │   ├── js/
 │   │   ├── vue.min.js           # Vue.js (CDN ou local)
@@ -82,11 +94,38 @@ tableau-equipes/
 │   └── css/
 │       └── tailwind.min.css     # Tailwind compilé
 ├── tests/                        # Tests
-│   ├── php/                     # Tests PHPUnit
-│   └── js/                      # Tests JavaScript
+│   ├── Unit/                    # Tests unitaires PHP
+│   │   ├── Domain/
+│   │   └── Application/
+│   ├── Integration/             # Tests d'intégration PHP
+│   └── JavaScript/              # Tests JavaScript
 ├── composer.json                 # Dépendances PHP
 └── package.json                  # Scripts de test (sans build)
 ```
+
+## Architecture DDD
+
+Le plugin suit les principes du Domain-Driven Design :
+
+### Couche Domaine (Domain)
+- **Entités** : Équipe, Joueur, Journée (avec identité unique)
+- **Value Objects** : Objets immuables sans identité (ex: Score, Position)
+- **Repositories** : Interfaces pour la persistance (abstraction)
+- **Services Domaine** : Logique métier complexe qui ne rentre pas dans une entité
+
+### Couche Application
+- **Use Cases** : Orchestration des opérations métier
+- **DTOs** : Transfert de données entre couches
+
+### Couche Infrastructure
+- **Repositories** : Implémentation concrète (WordPress DB, fake data, etc.)
+- **Adaptateurs WordPress** : Hooks, admin, REST API
+
+### Fake Data (Phase initiale)
+Pour la phase d'initialisation, les repositories retourneront des fake data :
+- 14 équipes de 4 joueurs chacune
+- Environ 200 licenciés au total
+- Plusieurs journées de championnat
 
 ## Intégration avec DataPing
 

@@ -1,0 +1,32 @@
+{
+  "name": "tableau-equipes",
+  "version": "1.0.0",
+  "description": "Extension WordPress pour gérer le déplacement de joueurs dans des équipes",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+  },
+  "devDependencies": {
+    "@vue/test-utils": "^2.4.3",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^23.0.1"
+  },
+  "type": "module",
+  "jest": {
+    "testEnvironment": "jsdom",
+    "moduleFileExtensions": [
+      "js",
+      "json"
+    ],
+    "transform": {},
+    "testMatch": [
+      "**/tests/JavaScript/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "public/js/**/*.js",
+      "!public/js/vue.min.js"
+    ]
+  }
+}

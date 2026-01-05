@@ -1,0 +1,28 @@
+# Composer
+/vendor/
+composer.lock
+
+# NPM
+/node_modules/
+package-lock.json
+
+# PHPUnit
+.phpunit.cache/
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# WordPress
+wp-config.php
+.htaccess
+
+# Logs
+*.log
