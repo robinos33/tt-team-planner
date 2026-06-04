@@ -1169,7 +1169,7 @@
         default:         screen = renderDashboard(); break;
       }
     }
-    return '<div style="width:100%;height:100%;display:flex;flex-direction:column;background:' + t.bg + ';color:' + t.ink + ';overflow:hidden;position:relative">' +
+    return '<div style="width:100%;height:100dvh;display:flex;flex-direction:column;background:' + t.bg + ';color:' + t.ink + ';overflow:hidden;position:relative">' +
       off +
       '<div style="flex:1;overflow-y:auto;overflow-x:hidden;background:' + t.bg + ';-webkit-overflow-scrolling:touch">' + screen + '</div>' +
       renderNav() +

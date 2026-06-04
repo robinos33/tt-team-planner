@@ -11,11 +11,13 @@
   --ttp-pri: #2563eb;
   --ttp-pri-ink: #1d4ed8;
 
+  /* Standalone : occupe toujours tout le viewport */
+  position: fixed;
+  inset: 0;
   width: 100%;
-  /* Fill the available space; page theme handles outer sizing */
-  min-height: 500px;
-  max-height: 100svh;
-  height: 700px;
+  height: 100dvh;
+  z-index: 9000;
+
   display: flex;
   flex-direction: column;
   font-family: var(--ttp-font);
@@ -23,23 +25,7 @@
   -moz-osx-font-smoothing: grayscale;
   box-sizing: border-box;
   overflow: hidden;
-  border-radius: var(--ttp-radius);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  /* Ensure the app is isolated from WordPress theme styles */
   line-height: 1.4;
-}
-
-/* On mobile, fill the full viewport */
-@media (max-width: 600px) {
-  #ttp-app {
-    height: 100svh;
-    max-height: 100svh;
-    border-radius: 0;
-    box-shadow: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9000;
-  }
 }
 
 /* Reset styles that bleed from WordPress themes */

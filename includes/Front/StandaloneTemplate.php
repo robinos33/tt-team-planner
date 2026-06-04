@@ -55,7 +55,7 @@ class StandaloneTemplate
   <link rel="manifest" href="' . $manifestUrl . '">
   <link rel="stylesheet" href="' . $cssUrl . '">
 </head>
-<body style="margin:0;padding:0;background:#f5f7fb">
+<body style="margin:0;padding:0;overflow:hidden;background:#f5f7fb;height:100dvh">
   <div id="ttp-app"></div>
   <script>window.TTPConfig = ' . $configJson . ';</script>
   <script src="' . $jsUrl . '"></script>
