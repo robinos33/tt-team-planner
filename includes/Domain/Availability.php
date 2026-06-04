@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Domain;
+namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 final class Availability
 {

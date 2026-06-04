@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Front;
+namespace TT\TeamPlanner\Front; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 /**
  * Remplace le thème WordPress par une page HTML autonome
@@ -43,24 +43,21 @@ class StandaloneTemplate
         header('Content-Type: text/html; charset=utf-8');
         header('X-Robots-Tag: noindex, nofollow');
 
-        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
-        echo '<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="robots" content="noindex,nofollow">
-  <title>' . $clubName . ' — TT Team Planner</title>
-  <link rel="manifest" href="' . $manifestUrl . '">
-  <link rel="stylesheet" href="' . $cssUrl . '">
-</head>
-<body style="margin:0;padding:0;overflow:hidden;background:#f5f7fb;height:100dvh">
-  <div id="ttp-app"></div>
-  <script>window.TTPConfig = ' . $configJson . ';</script>
-  <script src="' . $jsUrl . '"></script>
-</body>
-</html>';
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- template standalone, toutes les variables sont esc_url()/wp_json_encode()
+        echo '<!DOCTYPE html><html lang="fr"><head>';
+        echo '<meta charset="UTF-8">';
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">';
+        echo '<meta name="theme-color" content="#2563eb">';
+        echo '<meta name="robots" content="noindex,nofollow">';
+        echo '<title>' . $clubName . ' — TT Team Planner</title>';
+        echo '<link rel="manifest" href="' . $manifestUrl . '">';
+        echo '<link rel="stylesheet" href="' . $cssUrl . '">'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- app shell autonome, wp_enqueue_style() non applicable
+        echo '</head>';
+        echo '<body style="margin:0;padding:0;overflow:hidden;background:#f5f7fb;height:100dvh">';
+        echo '<div id="ttp-app"></div>';
+        echo '<script>window.TTPConfig = ' . $configJson . ';</script>';
+        echo '<script src="' . $jsUrl . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- app shell autonome, wp_enqueue_script() non applicable
+        echo '</body></html>';
         // phpcs:enable
 
         exit;

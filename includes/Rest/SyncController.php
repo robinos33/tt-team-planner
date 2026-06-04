@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Rest;
+namespace TT\TeamPlanner\Rest; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 use WP_REST_Request;
 use WP_REST_Response;
@@ -45,6 +45,7 @@ class SyncController
         }
 
         /** @var \Joueur[]|mixed $joueurs */
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- hook externe du plugin MonClubTT (dépendance), non modifiable
         $joueurs = apply_filters('monclubtt_get_joueurs', 'MF');
 
         if (! is_array($joueurs) || empty($joueurs)) {

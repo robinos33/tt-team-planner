@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Admin;
+namespace TT\TeamPlanner\Admin; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 use TT\TeamPlanner\Repository\PlayerRepository;
 

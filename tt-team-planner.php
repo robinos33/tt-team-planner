@@ -15,7 +15,7 @@ declare(strict_types=1);
  * Domain Path: /languages
  */
 
-namespace TT\TeamPlanner;
+namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 if (! defined('ABSPATH')) {
     exit;

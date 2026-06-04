@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Repository;
+namespace TT\TeamPlanner\Repository; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 use TT\TeamPlanner\Domain\Player;
 
 class PlayerRepository
 {
+    private const CACHE_GROUP = 'ttp_players';
+
     private string $table;
 
     public function __construct()
@@ -18,31 +20,59 @@ class PlayerRepository
     /** @return Player[] */
     public function findAll(): array
     {
+        $cached = wp_cache_get('all', self::CACHE_GROUP);
+        if ($cached !== false) {
+            return $cached; // @phpstan-ignore-line
+        }
+
         global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $rows = $wpdb->get_results("SELECT * FROM {$this->table} ORDER BY ranking DESC", ARRAY_A);
-        return array_map([Player::class, 'fromRow'], $rows ?: []);
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows   = $wpdb->get_results("SELECT * FROM {$this->table} ORDER BY ranking DESC", ARRAY_A);
+        $result = array_map([Player::class, 'fromRow'], $rows ?: []);
+
+        wp_cache_set('all', $result, self::CACHE_GROUP);
+        return $result;
     }
 
     public function findById(int $id): ?Player
     {
+        $key    = "id_{$id}";
+        $cached = wp_cache_get($key, self::CACHE_GROUP);
+        if ($cached !== false) {
+            return $cached ?: null; // @phpstan-ignore-line
+        }
+
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $row = $wpdb->get_row(
             $wpdb->prepare("SELECT * FROM {$this->table} WHERE id = %d", $id),
             ARRAY_A
         );
-        return $row ? Player::fromRow($row) : null;
+        $player = $row ? Player::fromRow($row) : null;
+
+        wp_cache_set($key, $player ?? false, self::CACHE_GROUP);
+        return $player;
     }
 
     /** @return Player[] */
     public function findByTeam(string $teamCode): array
     {
+        $key    = 'team_' . sanitize_key($teamCode);
+        $cached = wp_cache_get($key, self::CACHE_GROUP);
+        if ($cached !== false) {
+            return $cached; // @phpstan-ignore-line
+        }
+
         global $wpdb;
-        $rows = $wpdb->get_results(
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows   = $wpdb->get_results(
             $wpdb->prepare("SELECT * FROM {$this->table} WHERE usual_team = %s ORDER BY ranking DESC", $teamCode),
             ARRAY_A
         );
-        return array_map([Player::class, 'fromRow'], $rows ?: []);
+        $result = array_map([Player::class, 'fromRow'], $rows ?: []);
+
+        wp_cache_set($key, $result, self::CACHE_GROUP);
+        return $result;
     }
 
     /**
@@ -56,11 +86,11 @@ class PlayerRepository
 
         $externalId = sanitize_text_field($data['external_id'] ?? '');
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $existing = $wpdb->get_var(
             $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $externalId)
         );
 
-        // Champs issus de la FFTT via DataPing — toujours écrasés
         $ffttFields = [
             'external_id'    => $externalId,
             'license_number' => sanitize_text_field($data['license_number'] ?? $externalId),
@@ -74,12 +104,13 @@ class PlayerRepository
         ];
 
         if ($existing) {
-            // UPDATE : uniquement les champs FFTT — les champs manuels sont inchangés
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             $wpdb->update($this->table, $ffttFields, ['id' => (int) $existing]);
+            $this->invalidateCache();
             return (int) $existing;
         }
 
-        // INSERT : champs FFTT + champs manuels avec valeurs vides par défaut
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->insert($this->table, array_merge($ffttFields, [
             'phone'       => '',
             'usual_team'  => '',
@@ -89,17 +120,18 @@ class PlayerRepository
             'notes'       => '',
         ]));
 
+        $this->invalidateCache();
         return $wpdb->insert_id;
     }
 
     /**
      * Upsert complet (admin) — écrase tous les champs.
-     * À utiliser uniquement depuis l'interface d'administration TTP.
      */
     public function upsert(array $data): int
     {
         global $wpdb;
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $existing = $wpdb->get_var(
             $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $data['external_id'] ?? '')
         );
@@ -123,18 +155,23 @@ class PlayerRepository
         ];
 
         if ($existing) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             $wpdb->update($this->table, $row, ['id' => (int) $existing]);
+            $this->invalidateCache();
             return (int) $existing;
         }
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $wpdb->insert($this->table, $row);
+        $this->invalidateCache();
         return $wpdb->insert_id;
     }
 
     public function updateContactInfo(int $id, string $phone, string $notes): bool
     {
         global $wpdb;
-        return (bool) $wpdb->update(
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $ok = (bool) $wpdb->update(
             $this->table,
             [
                 'phone' => sanitize_text_field($phone),
@@ -142,12 +179,22 @@ class PlayerRepository
             ],
             ['id' => $id]
         );
+
+        if ($ok) {
+            $this->invalidateCache($id);
+        }
+        return $ok;
     }
 
     public function count(): int
     {
         global $wpdb;
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table}");
+    }
+
+    private function invalidateCache(?int $id = null): void
+    {
+        wp_cache_flush_group(self::CACHE_GROUP);
     }
 }

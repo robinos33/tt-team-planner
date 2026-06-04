@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Rest;
+namespace TT\TeamPlanner\Rest; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 use WP_REST_Request;
 use WP_REST_Response;
@@ -48,6 +48,7 @@ class SeasonController
 
         // Suppression des compositions
         $deleted_compos = $wpdb->delete(
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $wpdb->prefix . 'tttp_team_compositions',
             ['season' => $season, 'phase' => $phase],
             ['%s', '%d']
@@ -55,6 +56,7 @@ class SeasonController
 
         // Suppression des disponibilités
         $deleted_avail = $wpdb->delete(
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $wpdb->prefix . 'tttp_availabilities',
             ['season' => $season, 'phase' => $phase],
             ['%s', '%d']
