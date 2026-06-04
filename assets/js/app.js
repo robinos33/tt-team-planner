@@ -585,7 +585,6 @@
       }
     });
     h += '</div>';
-    h += '<button style="margin-top:14px;width:100%;padding:11px;border-radius:10px;background:' + t.surf + ';border:1px dashed ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer">+ Ajouter un remplaçant</button>';
     h += '</div>';
     return h;
   }
