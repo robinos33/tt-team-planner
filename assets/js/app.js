@@ -685,8 +685,6 @@
 
   function renderPlayerCard(p, dark) {
     var t = tk(dark);
-    if (S.playerEdit) return renderPlayerEdit(p, dark, t);
-
     var avail = getAvail(p.id);
     var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
     var phone = p.phone || '';
@@ -719,6 +717,8 @@
     var dark = S.dark; var t = tk(dark);
     var p = getPlayer(S.playerId);
     if (!p) return '<div style="padding:32px;text-align:center;color:' + t.ink2 + '">Joueur introuvable.</div>';
+
+    if (S.playerEdit) return renderPlayerEdit(p, dark, t);
 
     var avail = getAvail(p.id);
     var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
@@ -780,7 +780,12 @@
       '<div style="padding:10px 12px;font-size:12px;color:' + (p.notes ? t.ink : t.ink2) + ';line-height:1.5;font-style:' + (p.notes ? 'normal' : 'italic') + '">' + esc(p.notes || 'Aucune note') + '</div>',
       dark);
 
+    h += '</div>';
+    return h;
+  }
+
   function renderAvailGrid(p, phase, dark, t) {
+    var CYCLE = ['unknown', 'available', 'unavailable', 'uncertain'];
     var cells = S.journees.map(function (jx) {
       var av  = getAvailForRound(p.id, phase, jx.n);
       var bg  = av === 'available' ? C.okSoft : av === 'unavailable' ? C.errSoft : av === 'uncertain' ? C.warnSoft : t.surf2;
@@ -795,41 +800,6 @@
     return sectionWrap('Disponibilités · Phase ' + phase,
       '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:8px">' + cells + '</div>' + hint,
       dark);
-  }
-
-  function toggleAvailability(playerId, phase, round) {
-    var CYCLE = ['unknown', 'available', 'unavailable', 'uncertain'];
-    var cur = S.availabilities.find(function (a) {
-      return String(a.player_id) === String(playerId) && a.phase === phase && a.round === round;
-    });
-    var curStatus = cur ? cur.status : 'unknown';
-    var nextStatus = CYCLE[(CYCLE.indexOf(curStatus) + 1) % CYCLE.length];
-    var season = cfg.season || '';
-
-    // Optimistic update
-    var found = false;
-    var updated = S.availabilities.map(function (a) {
-      if (String(a.player_id) === String(playerId) && a.phase === phase && a.round === round) {
-        found = true;
-        return Object.assign({}, a, { status: nextStatus });
-      }
-      return a;
-    });
-    if (!found) updated.push({ player_id: playerId, season: season, phase: phase, round: round, status: nextStatus, comment: '' });
-    setState({ availabilities: updated });
-
-    apiFetch('/availability', {
-      method: 'POST',
-      body: JSON.stringify({ player_id: playerId, season: season, phase: phase, round: round, status: nextStatus, comment: '' })
-    }).catch(function () {
-      // Rollback on error
-      setState({ availabilities: S.availabilities.map(function (a) {
-        if (String(a.player_id) === String(playerId) && a.phase === phase && a.round === round) {
-          return Object.assign({}, a, { status: curStatus });
-        }
-        return a;
-      })});
-    });
   }
 
   function renderPlayerEdit(p, dark, t) {
@@ -1019,7 +989,6 @@
     if ('screen' in patch && S.screen !== prevScreen) pushHash(S);
     render();
   }
-  }
 
   function render() {
     if (!root) return;
@@ -1033,6 +1002,13 @@
     } else if (prevInput === 'search' && S.screen === 'joueurs') {
       var si = root.querySelector('[data-input="search"]');
       if (si) { si.focus(); try { si.setSelectionRange(S.searchQ.length, S.searchQ.length); } catch (e) {} }
+    } else if (prevInput === 'edit-phone') {
+      var ef = root.querySelector('[data-input="edit-phone"]');
+      if (ef) { ef.focus(); try { ef.setSelectionRange(ef.value.length, ef.value.length); } catch (e) {} }
+    } else if (prevInput === 'edit-notes') {
+      var nt = root.querySelector('[data-input="edit-notes"]');
+      if (nt) { nt.focus(); }
+    }
   }
 
   function attachEvents() {
@@ -1047,6 +1023,40 @@
     if (en) en.addEventListener('input', function (e) { S.editNotes = e.target.value; });
   }
 
+  function toggleAvailability(playerId, phase, round) {
+    var CYCLE = ['unknown', 'available', 'unavailable', 'uncertain'];
+    var cur = S.availabilities.find(function (a) {
+      return String(a.player_id) === String(playerId) && a.phase === phase && a.round === round;
+    });
+    var curStatus = cur ? cur.status : 'unknown';
+    var nextStatus = CYCLE[(CYCLE.indexOf(curStatus) + 1) % CYCLE.length];
+    var season = cfg.season || '';
+
+    // Optimistic update
+    var found = false;
+    var updated = S.availabilities.map(function (a) {
+      if (String(a.player_id) === String(playerId) && a.phase === phase && a.round === round) {
+        found = true;
+        return Object.assign({}, a, { status: nextStatus });
+      }
+      return a;
+    });
+    if (!found) updated.push({ player_id: playerId, season: season, phase: phase, round: round, status: nextStatus, comment: '' });
+    setState({ availabilities: updated });
+
+    apiFetch('/availability', {
+      method: 'POST',
+      body: JSON.stringify({ player_id: playerId, season: season, phase: phase, round: round, status: nextStatus, comment: '' })
+    }).catch(function () {
+      // Rollback on error
+      setState({ availabilities: S.availabilities.map(function (a) {
+        if (String(a.player_id) === String(playerId) && a.phase === phase && a.round === round) {
+          return Object.assign({}, a, { status: curStatus });
+        }
+        return a;
+      })});
+    });
+  }
 
   function savePlayerEdit() {
     var id = S.playerId;
@@ -1097,16 +1107,61 @@
       case 'player-edit-save':   savePlayerEdit(); break;
     }
   }
+
+  // ═══════════════════════════════════════════
+  // ROUTING — hash-based
+  // ═══════════════════════════════════════════
+  function screenToHash(s) {
+    if (s.screen === 'journee')  return '#journee/' + s.journeeN;
+    if (s.screen === 'player')   return '#joueur/'  + s.playerId;
+    if (s.screen === 'joueurs')  return '#joueurs';
+    if (s.screen === 'alertes')  return '#alertes';
+    if (s.screen === 'reglages') return '#reglages';
+    return '#';
+  }
+
+  function hashToState(hash) {
+    var h = (hash || '').replace(/^#\/?/, '');
+    if (!h || h === 'dashboard') return { screen: 'dashboard', tab: 'dashboard' };
+    if (h === 'joueurs')  return { screen: 'joueurs',  tab: 'joueurs' };
+    if (h === 'alertes')  return { screen: 'alertes',  tab: 'alertes' };
+    if (h === 'reglages') return { screen: 'reglages', tab: 'reglages' };
+    var m = h.match(/^journee\/(\d+)$/);
+    if (m) return { screen: 'journee', tab: 'journees', journeeN: parseInt(m[1]) };
+    m = h.match(/^joueur\/(\d+)$/);
+    if (m) return { screen: 'player', tab: 'joueurs', playerId: parseInt(m[1]) };
+    return { screen: 'dashboard', tab: 'dashboard' };
+  }
+
+  function pushHash(s) {
+    var hash = screenToHash(s);
+    if (w.location.hash !== hash) history.pushState(null, '', hash);
+  }
+
+  function goTab(id) {
+    var map = { dashboard: 'dashboard', journees: 'journee', joueurs: 'joueurs', alertes: 'alertes', reglages: 'reglages' };
+    setState({ tab: id, screen: map[id] || id });
+    if (id === 'journees') { loadCompositions(); loadAlerts(); }
+  }
+
+  function goBack() {
+    if (S.screen === 'player')  { setState({ screen: S.tab === 'joueurs' ? 'joueurs' : 'journee' }); }
+    else if (S.screen === 'journee') { setState({ screen: 'dashboard', tab: 'dashboard' }); }
+    else { setState({ screen: 'dashboard', tab: 'dashboard' }); }
+  }
+
+  // ═══════════════════════════════════════════
+  // PWA — register service worker
+  // ═══════════════════════════════════════════
+  function registerSW() {
+    if ('serviceWorker' in navigator && cfg.swUrl) {
+      navigator.serviceWorker.register(cfg.swUrl).catch(function () {});
+    }
+  }
+
   // ═══════════════════════════════════════════
   // INIT
   // ═══════════════════════════════════════════
-  function applyHash() {
-    var parsed = hashToState(w.location.hash);
-    Object.assign(S, parsed);
-    if (parsed.screen === 'journee') { loadCompositions(); loadAlerts(); }
-    render();
-  }
-
   function applyHash() {
     var parsed = hashToState(w.location.hash);
     Object.assign(S, parsed);
