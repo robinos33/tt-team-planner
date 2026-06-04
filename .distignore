@@ -1,0 +1,18 @@
+# Fichiers exclus du déploiement SVN WordPress.org
+# (conservés dans git, ignorés lors du push vers WP.org)
+
+.git
+.gitignore
+.distignore
+.github
+.claude
+
+tests/
+phpcs.xml
+CLAUDE.md
+README.md
+composer.json
+composer.lock
+package.json
+package-lock.json
+phpunit.xml

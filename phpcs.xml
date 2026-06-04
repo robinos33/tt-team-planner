@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<ruleset name="TT Team Planner">
+    <description>PHPCS configuration for TT Team Planner.</description>
+
+    <file>.</file>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>tests/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+
+    <!-- WordPress Extra ruleset -->
+    <rule ref="WordPress-Extra">
+        <!-- PSR-4 namespace TT\TeamPlanner is our plugin prefix — accepted deviation -->
+        <exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound"/>
+
+        <!-- StandaloneTemplate bypasses WP template system intentionally (app shell) -->
+        <exclude name="WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet"/>
+        <exclude name="WordPress.WP.EnqueuedResources.NonEnqueuedScript"/>
+    </rule>
+
+    <!-- Declare acceptable prefixes: TT\TeamPlanner (namespace) and ttp (functions/variables) -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="TT\TeamPlanner"/>
+                <element value="ttp"/>
+                <element value="TTP"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Repository pattern : direct DB queries with custom tables are intentional.
+         $this->table is set from $wpdb->prefix in constructors — not user input. -->
+    <rule ref="WordPress.DB.DirectDatabaseQuery.DirectQuery">
+        <exclude-pattern>includes/Repository/*</exclude-pattern>
+        <exclude-pattern>includes/Rest/SeasonController.php</exclude-pattern>
+        <exclude-pattern>uninstall.php</exclude-pattern>
+    </rule>
+    <rule ref="WordPress.DB.DirectDatabaseQuery.NoCaching">
+        <exclude-pattern>includes/Repository/*</exclude-pattern>
+        <exclude-pattern>includes/Rest/SeasonController.php</exclude-pattern>
+        <exclude-pattern>uninstall.php</exclude-pattern>
+    </rule>
+    <!-- {$this->table} is safe: value comes from $wpdb->prefix in constructor, not user input -->
+    <rule ref="WordPress.DB.PreparedSQL.InterpolatedNotPrepared">
+        <exclude-pattern>includes/Repository/*</exclude-pattern>
+    </rule>
+
+    <!-- monclubtt_get_joueurs is an external hook from the MonClubTT dependency plugin -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound">
+        <exclude-pattern>includes/Rest/SyncController.php</exclude-pattern>
+    </rule>
+</ruleset>

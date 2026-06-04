@@ -28,6 +28,7 @@ define('TTP_PLUGIN_FILE', __FILE__);
 define('TTP_TEXT_DOMAIN', 'tt-team-planner');
 
 // Load all includes (no Composer autoloader needed — compatible with shared hosting)
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- préfixe ttp_ conforme à la convention interne
 $ttp_includes = [
     'includes/Domain/Player.php',
     'includes/Domain/Availability.php',
@@ -55,6 +56,7 @@ $ttp_includes = [
 foreach ($ttp_includes as $file) {
     require_once TTP_PLUGIN_DIR . $file;
 }
+// phpcs:enable
 
 register_activation_hook(__FILE__,   [Activator::class,   'activate']);
 register_deactivation_hook(__FILE__, [Deactivator::class, 'deactivate']);

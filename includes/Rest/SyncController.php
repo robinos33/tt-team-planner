@@ -96,10 +96,8 @@ class SyncController
         );
 
         if ($errors > 0) {
-            $message .= ' ' . sprintf(
-                __('%d entrée(s) ignorée(s) (données invalides).', 'tt-team-planner'),
-                $errors
-            );
+            /* translators: %d: number of skipped entries */
+            $message .= ' ' . sprintf( __('%d entrée(s) ignorée(s) (données invalides).', 'tt-team-planner'), $errors );
         }
 
         return new WP_REST_Response([

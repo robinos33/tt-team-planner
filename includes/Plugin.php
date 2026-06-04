@@ -28,7 +28,6 @@ final class Plugin
 
     private function __construct()
     {
-        add_action('plugins_loaded', [$this, 'loadTextDomain']);
         add_action('plugins_loaded', [Activator::class, 'maybeUpgrade']);
         add_action('init',           [$this, 'init']);
         add_action('rest_api_init',  [$this, 'registerRestRoutes']);
@@ -37,15 +36,6 @@ final class Plugin
             add_action('admin_menu', [$this, 'registerAdminMenu']);
             add_action('admin_init', [$this, 'registerSettings']);
         }
-    }
-
-    public function loadTextDomain(): void
-    {
-        load_plugin_textdomain(
-            TTP_TEXT_DOMAIN,
-            false,
-            dirname(plugin_basename(TTP_PLUGIN_FILE)) . '/languages'
-        );
     }
 
     public function init(): void

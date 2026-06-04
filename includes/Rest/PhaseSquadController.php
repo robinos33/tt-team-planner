@@ -174,6 +174,7 @@ class PhaseSquadController
         return new WP_REST_Response([
             'success' => true,
             'placed'  => $placed,
+            /* translators: %d: number of slots filled */
             'message' => sprintf(__('%d slot(s) rempli(s).', 'tt-team-planner'), $placed),
         ], 200);
     }

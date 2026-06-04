@@ -315,7 +315,8 @@ class SettingsPage
         $level = esc_attr($team['level'] ?? '');
         $color = esc_attr($team['color'] ?? '#2563eb');
 
-        $idx = absint($i);
+        $idx = absint($i); // entier garanti, sans user input
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $idx est absint(), $code/$name/$level/$color sont esc_attr()
         echo '<tr class="ttp-team-row">';
         echo '<td><input type="text" name="ttp_teams[' . $idx . '][code]" value="' . $code . '" placeholder="auto" class="small-text ttp-team-code"></td>';
         echo '<td><input type="text" name="ttp_teams[' . $idx . '][name]" value="' . $name . '" placeholder="' . esc_attr__('Équipe 1', 'tt-team-planner') . '" class="regular-text ttp-team-name" required></td>';
@@ -323,6 +324,7 @@ class SettingsPage
         echo '<td><input type="color" name="ttp_teams[' . $idx . '][color]" value="' . $color . '" style="width:44px;height:30px;padding:2px;cursor:pointer"></td>';
         echo '<td><button type="button" class="button ttp-remove-team" title="' . esc_attr__('Supprimer', 'tt-team-planner') . '">✕</button></td>';
         echo '</tr>';
+        // phpcs:enable
     }
 
     private function renderDatesSection(): void
@@ -340,16 +342,19 @@ class SettingsPage
             }
 
             echo '<div>';
-            echo '<h3 style="margin-bottom:8px">Phase ' . $num . '</h3>';
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $num est absint() dans le foreach
+            echo '<h3 style="margin-bottom:8px">Phase ' . absint($num) . '</h3>';
             echo '<table role="presentation">';
             for ($j = 1; $j <= 7; $j++) {
                 $val  = esc_attr($dates[$j - 1] ?? '');
-                $id   = esc_attr('ttp_date_p' . $num . '_j' . $j);
-                $name = esc_attr($key . '[' . ($j - 1) . ']');
+                $id   = esc_attr('ttp_date_p' . absint($num) . '_j' . absint($j));
+                $name = esc_attr($key . '[' . ( absint($j) - 1 ) . ']');
+                // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- $id/$name/$val sont esc_attr(), $j est absint()
                 echo '<tr style="margin-bottom:4px">';
                 echo '<th scope="row" style="width:36px;font-weight:600;padding:4px 8px 4px 0"><label for="' . $id . '">J' . absint($j) . '</label></th>';
                 echo '<td><input type="date" id="' . $id . '" name="' . $name . '" value="' . $val . '"></td>';
                 echo '</tr>';
+                // phpcs:enable
             }
             echo '</table>';
             echo '</div>';
@@ -361,6 +366,7 @@ class SettingsPage
         $resetUrl   = esc_url(rest_url('ttp/v1/season/reset'));
         $nonce      = esc_js(wp_create_nonce('wp_rest'));
 
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- variables déjà échappées via esc_js()/esc_url()
         echo "<div style='margin-top:20px'>";
         echo "<button type='button' class='button' style='color:#b91c1c;border-color:#b91c1c'"
            . " onclick=\"(function(){"
@@ -374,6 +380,7 @@ class SettingsPage
            . " " . esc_html($season)
            . "</button>";
         echo "</div>";
+        // phpcs:enable
     }
 
     private function renderRedirectNotice(): void
@@ -400,6 +407,7 @@ class SettingsPage
     {
         global $wpdb;
 
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- lecture unique à l'affichage, pas de valeur à mettre en cache
         $page = $wpdb->get_row(
             $wpdb->prepare(
                 "SELECT ID FROM {$wpdb->posts}
@@ -484,6 +492,7 @@ class SettingsPage
         $lblSync   = esc_js(__('Synchroniser les joueurs', 'tt-team-planner'));
         $lblNet    = esc_js(__('Erreur reseau.', 'tt-team-planner'));
 
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- variables inline déjà échappées via esc_js()/esc_url()
         echo "<script>
         document.getElementById('ttp-sync-btn')?.addEventListener('click', async function () {
             var btn    = this;
