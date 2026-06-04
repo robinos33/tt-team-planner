@@ -90,12 +90,12 @@ class SettingsPage
         ], true);
 
         if (is_wp_error($pageId)) {
-            wp_redirect(add_query_arg(
+            wp_safe_redirect(add_query_arg(
                 ['page' => 'tt-team-planner', 'ttp_notice' => 'create_error'],
                 admin_url('admin.php')
             ));
         } else {
-            wp_redirect(add_query_arg(
+            wp_safe_redirect(add_query_arg(
                 ['page' => 'tt-team-planner', 'ttp_notice' => 'created', 'ttp_page_id' => $pageId],
                 admin_url('admin.php')
             ));
@@ -315,11 +315,12 @@ class SettingsPage
         $level = esc_attr($team['level'] ?? '');
         $color = esc_attr($team['color'] ?? '#2563eb');
 
+        $idx = absint($i);
         echo '<tr class="ttp-team-row">';
-        echo '<td><input type="text" name="ttp_teams[' . $i . '][code]" value="' . $code . '" placeholder="auto" class="small-text ttp-team-code"></td>';
-        echo '<td><input type="text" name="ttp_teams[' . $i . '][name]" value="' . $name . '" placeholder="Équipe 1" class="regular-text ttp-team-name" required></td>';
-        echo '<td><input type="text" name="ttp_teams[' . $i . '][level]" value="' . $level . '" placeholder="Régionale 1" list="ttp-levels-list" class="regular-text ttp-team-level"></td>';
-        echo '<td><input type="color" name="ttp_teams[' . $i . '][color]" value="' . $color . '" style="width:44px;height:30px;padding:2px;cursor:pointer"></td>';
+        echo '<td><input type="text" name="ttp_teams[' . $idx . '][code]" value="' . $code . '" placeholder="auto" class="small-text ttp-team-code"></td>';
+        echo '<td><input type="text" name="ttp_teams[' . $idx . '][name]" value="' . $name . '" placeholder="' . esc_attr__('Équipe 1', 'tt-team-planner') . '" class="regular-text ttp-team-name" required></td>';
+        echo '<td><input type="text" name="ttp_teams[' . $idx . '][level]" value="' . $level . '" placeholder="' . esc_attr__('Régionale 1', 'tt-team-planner') . '" list="ttp-levels-list" class="regular-text ttp-team-level"></td>';
+        echo '<td><input type="color" name="ttp_teams[' . $idx . '][color]" value="' . $color . '" style="width:44px;height:30px;padding:2px;cursor:pointer"></td>';
         echo '<td><button type="button" class="button ttp-remove-team" title="' . esc_attr__('Supprimer', 'tt-team-planner') . '">✕</button></td>';
         echo '</tr>';
     }
@@ -343,10 +344,10 @@ class SettingsPage
             echo '<table role="presentation">';
             for ($j = 1; $j <= 7; $j++) {
                 $val  = esc_attr($dates[$j - 1] ?? '');
-                $id   = 'ttp_date_p' . $num . '_j' . $j;
-                $name = $key . '[' . ($j - 1) . ']';
+                $id   = esc_attr('ttp_date_p' . $num . '_j' . $j);
+                $name = esc_attr($key . '[' . ($j - 1) . ']');
                 echo '<tr style="margin-bottom:4px">';
-                echo '<th scope="row" style="width:36px;font-weight:600;padding:4px 8px 4px 0"><label for="' . $id . '">J' . $j . '</label></th>';
+                echo '<th scope="row" style="width:36px;font-weight:600;padding:4px 8px 4px 0"><label for="' . $id . '">J' . absint($j) . '</label></th>';
                 echo '<td><input type="date" id="' . $id . '" name="' . $name . '" value="' . $val . '"></td>';
                 echo '</tr>';
             }
@@ -472,8 +473,7 @@ class SettingsPage
         echo '<td>' . esc_html(TTP_VERSION) . '</td></tr>';
         echo '</table>';
 
-        $disabled = $datapingActive ? '' : ' disabled';
-        echo '<button id="ttp-sync-btn" class="button button-primary"' . $disabled . '>';
+        echo '<button id="ttp-sync-btn" class="button button-primary"' . ($datapingActive ? '' : ' disabled') . '>';
         echo esc_html__('Synchroniser les joueurs', 'tt-team-planner');
         echo '</button>';
         echo '<div id="ttp-sync-result" style="margin-top:12px;display:none"></div>';

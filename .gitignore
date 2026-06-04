@@ -26,3 +26,8 @@ wp-config.php
 
 # Logs
 *.log
+src/
+.claude/
+skills.md
+claude.md
+languages/.gitkeep
