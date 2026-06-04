@@ -5,8 +5,8 @@
  *   - Everything else: network-first, no cache
  */
 
-var CACHE_SHELL  = 'ttp-shell-v1';
-var CACHE_API    = 'ttp-api-v1';
+var CACHE_SHELL  = 'ttp-shell-v2';
+var CACHE_API    = 'ttp-api-v2';
 var SHELL_ASSETS = [
   // Populated at install time — the plugin injects the real URLs via wp_localize_script
   // so we keep this list minimal and rely on runtime caching.

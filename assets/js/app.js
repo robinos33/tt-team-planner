@@ -58,14 +58,47 @@
     searchQ: '', playerFilter: 'all',
     playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
     teams: cfg.teams || [],
-    journees: buildJournees()
+    journees: buildJournees(cfg.phase || 0)
   };
 
-  function buildJournees() {
-    var stored = cfg.journeeDates || [];
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+
+  function buildJournees(phase) {
+    if (phase === undefined) phase = S ? S.phase : (cfg.phase || 0);
+    var allDates = cfg.journeeDates || [];
+    // journeeDates est maintenant [[p1 dates], [p2 dates]]
+    var phDates = Array.isArray(allDates[phase]) ? allDates[phase] : allDates;
+    var today = todayISO();
+    var foundNext = false;
     return Array.from({ length: 7 }, function (_, i) {
-      return { n: i + 1, date: stored[i] || '', done: false, complete: 0, alerts: 0, current: false };
+      var date = phDates[i] || '';
+      var done = !!(date && date < today);
+      var current = false;
+      if (!done && date && !foundNext) { current = true; foundNext = true; }
+      return { n: i + 1, date: date, done: done, complete: 0, alerts: 0, current: current };
     });
+  }
+
+  function findGlobalNext() {
+    var allDates = cfg.journeeDates || [];
+    if (!Array.isArray(allDates[0])) return null;
+    var today = todayISO();
+    var best = null;
+    for (var ph = 0; ph < 2; ph++) {
+      var dates = allDates[ph] || [];
+      for (var i = 0; i < dates.length; i++) {
+        var d = dates[i];
+        if (d && d >= today && (!best || d < best.date)) {
+          best = { phase: ph + 1, round: i + 1, date: d };
+        }
+      }
+    }
+    return best;
   }
 
   // ═══════════════════════════════════════════
@@ -347,8 +380,18 @@
     var jj = S.journees;
     var done = jj.filter(function (j) { return j.done; }).length;
     var alerts = jj.reduce(function (s, j) { return s + (j.alerts || 0); }, 0) + S.ruleAlerts.length;
-    var next = jj.find(function (j) { return !j.done; }) || jj[0];
     var tc = cfg.teamsCount || S.teams.length || 11;
+
+    // Prochaine journée globale (toutes phases confondues)
+    var nextGlobal = findGlobalNext();
+    // Affiche la journée globale si elle est dans une autre phase que la courante
+    var showGlobal = !!(nextGlobal && nextGlobal.phase !== S.phase + 1);
+    // Journée courante dans la phase affichée (première avec date future)
+    var nextLocal  = jj.find(function (j) { return j.current; }) || jj[jj.length - 1];
+    // Objet unifié : { round, date, phase, complete }
+    var next = showGlobal
+      ? nextGlobal
+      : { round: nextLocal.n, date: nextLocal.date, phase: S.phase + 1, complete: nextLocal.complete };
 
     var h = '<div style="padding:16px;display:flex;flex-direction:column;gap:14px">';
 
@@ -376,12 +419,16 @@
     h += '</div>';
 
     // Next journée card
+    var nextPhaseLabel = showGlobal ? ' · Phase ' + next.phase : '';
+    var nextAction = showGlobal
+      ? 'data-action="goto-phase-journee" data-phase="' + (next.phase - 1) + '" data-journee="' + next.round + '"'
+      : 'data-action="journee" data-value="' + next.round + '"';
     h += '<div style="background:linear-gradient(135deg,' + C.pri + ',' + C.priInk + ');color:white;border-radius:14px;padding:14px;position:relative;overflow:hidden">' +
-      '<div style="font-size:11px;opacity:0.85;font-weight:500;letter-spacing:0.4px;text-transform:uppercase">Prochaine journée</div>' +
-      '<div style="font-size:22px;font-weight:700;margin-top:4px;letter-spacing:-0.3px">J' + next.n + (next.date ? ' · ' + esc(next.date) : '') + '</div>' +
+      '<div style="font-size:11px;opacity:0.85;font-weight:500;letter-spacing:0.4px;text-transform:uppercase">Prochaine journée' + esc(nextPhaseLabel) + '</div>' +
+      '<div style="font-size:22px;font-weight:700;margin-top:4px;letter-spacing:-0.3px">J' + next.round + (next.date ? ' · ' + esc(next.date) : '') + '</div>' +
       '<div style="font-size:12px;opacity:0.9;margin-top:2px">' + (next.complete || 0) + ' / ' + tc + ' compositions complètes</div>' +
       '<div style="display:flex;gap:6px;margin-top:12px">' +
-        '<button data-action="journee" data-value="' + next.n + '" style="background:white;color:' + C.priInk + ';border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Préparer les compos →</button>' +
+        '<button ' + nextAction + ' style="background:white;color:' + C.priInk + ';border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Préparer les compos →</button>' +
       '</div>' +
       '<div style="position:absolute;right:-20px;top:-30px;font-size:90px;opacity:0.12;line-height:1;pointer-events:none">🏓</div>' +
     '</div>';
@@ -1083,6 +1130,14 @@
     switch (a) {
       case 'tab':          goTab(v); break;
       case 'journee':      setState({ journeeN: parseInt(v), screen: 'journee', tab: 'journees' }); loadCompositions(); loadAlerts(); break;
+      case 'goto-phase-journee':
+        var targetPhase = parseInt(el.dataset.phase);
+        var targetJournee = parseInt(el.dataset.journee);
+        S.phase = targetPhase;
+        S.journees = buildJournees();
+        setState({ journeeN: targetJournee, screen: 'journee', tab: 'journees' });
+        loadCompositions(); loadAlerts();
+        break;
       case 'player':       if (!S.picker) setState({ playerId: parseInt(v), screen: 'player' }); break;
       case 'back':         goBack(); break;
       case 'goto':         setState({ screen: el.dataset.screen, tab: el.dataset.tab || el.dataset.screen }); break;
