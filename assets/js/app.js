@@ -517,6 +517,7 @@
     var filled = arr.filter(function (s) { return s && s.player_id; }).length;
 
     var h = '<div style="padding:12px">';
+    // Team header
     h += '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-left:4px solid ' + tc + ';border-radius:10px;padding:12px;margin-bottom:10px">' +
       '<div style="display:flex;align-items:center;gap:8px">' +
         '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">' + esc(team.name || team.id || 'Équipe') + '</div><div style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level || '') + '</div></div>' +
@@ -524,6 +525,7 @@
       '</div>' +
     '</div>';
 
+    // Slots
     h += '<div style="font-size:10px;color:' + t.ink2 + ';font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding:0 2px">4 slots joueurs</div>';
     h += '<div style="display:flex;flex-direction:column;gap:8px">';
     arr.forEach(function (slot, i) {
@@ -549,6 +551,7 @@
               '<div style="font-size:13px;font-weight:600;color:' + t.ink + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</div>' +
               '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
                 '<span style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + '</span>' +
+                '<span style="font-size:11px;color:' + t.ink2 + '">·</span>' +
                 '<span style="font-size:11px;color:' + avColor(avail, dark) + '">' + avEmoji(avail) + ' ' + avStatus(avail) + '</span>' +
               '</div>' +
               playerBadges(p, dark) +
@@ -559,9 +562,456 @@
       }
     });
     h += '</div>';
+    h += '<button style="margin-top:14px;width:100%;padding:11px;border-radius:10px;background:' + t.surf + ';border:1px dashed ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer">+ Ajouter un remplaçant</button>';
     h += '</div>';
     return h;
   }
+
+  // ═══════════════════════════════════════════
+  // PLAYER PICKER
+  // ═══════════════════════════════════════════
+  function renderPicker() {
+    var dark = S.dark; var t = tk(dark);
+    var teamCode = S.picker.teamCode;
+    var slotNum  = S.picker.slotNum;
+    var q = S.pickerQ.toLowerCase();
+
+    var team = S.teams.find(function (tm) { return (tm.code || tm.id) === teamCode; });
+    var tc       = team ? (team.color || C.pri) : C.pri;
+    var teamName = team ? (team.name || teamCode) : teamCode;
+
+    // Joueurs déjà placés dans une AUTRE équipe ce round
+    var elsewhere = {};
+    S.compositions.forEach(function (c) {
+      if (c.player_id && c.team_code !== teamCode) elsewhere[c.player_id] = c.team_code;
+    });
+    // Joueurs déjà dans CETTE équipe (autre slot)
+    var inTeam = {};
+    S.compositions.forEach(function (c) {
+      if (c.player_id && c.team_code === teamCode && c.slot_number !== slotNum) inTeam[c.player_id] = true;
+    });
+
+    // Filtrage + tri : squad en tête, puis joueurs habituels, puis classement DESC
+    var squadIds = getSquadIds(teamCode, S.phase + 1);
+    var filtered = S.players.filter(function (p) {
+      if (!q) return true;
+      return ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase().includes(q)
+          || String(p.ranking || '').includes(q);
+    }).sort(function (a, b) {
+      var aInSquad = squadIds.indexOf(a.id) !== -1 ? 0 : 1;
+      var bInSquad = squadIds.indexOf(b.id) !== -1 ? 0 : 1;
+      if (aInSquad !== bInSquad) return aInSquad - bInSquad;
+      var au = (a.usual_team === teamCode) ? 0 : 1;
+      var bu = (b.usual_team === teamCode) ? 0 : 1;
+      return au !== bu ? au - bu : (b.ranking || 0) - (a.ranking || 0);
+    });
+
+    var h = '<div style="position:absolute;inset:0;z-index:50;display:flex;flex-direction:column">';
+
+    // Backdrop semi-transparent (tap = fermer)
+    h += '<div data-action="picker-close" style="background:rgba(0,0,0,0.45);flex:0 0 64px;cursor:pointer"></div>';
+
+    // Panel
+    h += '<div style="flex:1;background:' + t.surf + ';display:flex;flex-direction:column;overflow:hidden">';
+
+    // En-tête
+    h += '<div style="padding:14px 16px 10px;border-bottom:1px solid ' + t.bord + ';display:flex;align-items:center;gap:10px;flex-shrink:0">';
+    h += '<div style="width:8px;height:8px;border-radius:50%;background:' + tc + ';flex-shrink:0"></div>';
+    h += '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">Choisir un joueur</div>';
+    h += '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:1px">' + esc(teamName) + ' &mdash; Slot ' + slotNum + '</div></div>';
+    h += '<button data-action="picker-close" style="width:28px;height:28px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:14px;cursor:pointer">✕</button>';
+    h += '</div>';
+
+    // Recherche
+    h += '<div style="padding:10px 12px;border-bottom:1px solid ' + t.bord + ';flex-shrink:0">';
+    h += '<div style="display:flex;align-items:center;gap:8px;background:' + t.surf2 + ';border-radius:8px;padding:8px 12px">';
+    h += '<span style="font-size:13px">🔍</span>';
+    h += '<input data-input="picker-search" value="' + esc(S.pickerQ) + '" placeholder="Rechercher…" autocomplete="off" style="flex:1;border:none;background:transparent;outline:none;color:' + t.ink + ';font-size:13px">';
+    if (S.pickerQ) {
+      h += '<button data-action="picker-clear" style="border:none;background:none;color:' + t.ink2 + ';cursor:pointer;font-size:14px;padding:0;line-height:1">✕</button>';
+    }
+    h += '</div></div>';
+
+    // Liste joueurs
+    h += '<div class="ttp-screen-content">';
+    if (filtered.length === 0) {
+      h += '<div style="padding:32px;text-align:center;color:' + t.ink2 + ';font-size:13px">Aucun joueur trouvé</div>';
+    } else {
+      var lastGroup = null;
+      filtered.forEach(function (p) {
+        var inSq = squadIds.indexOf(p.id) !== -1;
+        var grp  = inSq ? 'Effectif de phase' : (p.usual_team === teamCode ? 'Joueurs habituels' : 'Autres joueurs');
+        if (grp !== lastGroup) {
+          lastGroup = grp;
+          h += '<div style="padding:8px 12px 4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:' + t.ink2 + '">' + grp + '</div>';
+        }
+
+        var avail  = getAvail(p.id);
+        var init   = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+        var busy   = !!elsewhere[p.id];   // placé ailleurs — déconseillé mais autorisé
+        var taken  = !!inTeam[p.id];      // déjà dans ce slot ou autre slot de l'équipe
+        var grad   = avail === 'unavailable' ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,' + C.pri + ',' + C.priInk + ')';
+
+        h += '<button data-action="slot-assign" data-player-id="' + p.id + '"'
+           + (taken ? ' disabled' : '')
+           + ' style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-bottom:1px solid ' + t.bord + ';cursor:' + (taken ? 'not-allowed' : 'pointer') + ';text-align:left;opacity:' + (taken ? '0.35' : '1') + '">';
+
+        // Avatar
+        h += '<div style="position:relative;flex-shrink:0">'
+           + '<div style="width:36px;height:36px;border-radius:50%;background:' + grad + ';color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">' + esc(init) + '</div>'
+           + '<div style="position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:' + avColor(avail, dark) + ';border:2px solid ' + t.surf + '"></div>'
+           + '</div>';
+
+        // Infos
+        h += '<div style="flex:1;min-width:0">';
+        h += '<div style="font-size:13px;font-weight:600;color:' + t.ink + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</div>';
+        h += '<div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap">';
+        h += '<span style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + '</span>';
+        if (squadIds.indexOf(p.id) !== -1) h += badge('📋 ' + teamName, 'primary', dark, true);
+        if (busy) h += badge('Déjà en ' + elsewhere[p.id], 'warn', dark, true);
+        h += '</div>' + playerBadges(p, dark) + '</div>';
+
+        h += (taken ? '' : '<span style="color:' + t.ink2 + ';font-size:18px;opacity:0.4">›</span>');
+        h += '</button>';
+      });
+    }
+    h += '</div></div></div>';
+    return h;
+  }
+
+  // ═══════════════════════════════════════════
+  // JOUEURS
+  // ═══════════════════════════════════════════
+  function renderJoueurs() {
+    var dark = S.dark; var t = tk(dark);
+    var players = filteredPlayers();
+    var addBtn = '<button style="width:32px;height:32px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:18px;cursor:pointer">+</button>';
+    var h = topBar('Joueurs', S.players.length + ' licenciés', dark, false, addBtn);
+
+    // Search + filters
+    h += '<div style="padding:12px;background:' + t.surf + ';border-bottom:1px solid ' + t.bord + '">';
+    h += '<div style="display:flex;align-items:center;gap:8px;background:' + t.surf2 + ';padding:9px 12px;border-radius:10px">' +
+      '<span style="font-size:14px;opacity:0.6">🔍</span>' +
+      '<input data-input="search" value="' + esc(S.searchQ) + '" placeholder="Rechercher…" style="flex:1;border:none;background:transparent;outline:none;color:' + t.ink + ';font-size:13px">' +
+    '</div>';
+    var filters = [['all','Tous'],['ko','🚫 Indispo'],['capt','© Capitaines'],['E','E Étrangers'],['jeune','Jeunes'],['brule','🔥 Brûlés']];
+    h += '<div style="display:flex;gap:6px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch">';
+    filters.forEach(function (f) {
+      var active = S.playerFilter === f[0];
+      h += '<button data-action="filter" data-value="' + f[0] + '" style="padding:5px 10px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid ' + (active ? C.pri : t.bord) + ';background:' + (active ? C.pri : t.surf) + ';color:' + (active ? 'white' : t.ink2) + ';cursor:pointer;white-space:nowrap;flex-shrink:0">' + f[1] + '</button>';
+    });
+    h += '</div></div>';
+
+    h += '<div style="padding:12px">';
+    var teams = S.teams;
+    var shown = false;
+    if (teams.length) {
+      teams.forEach(function (team) {
+        var tp = players.filter(function (p) { return p.usual_team === (team.code || team.id || ''); });
+        if (!tp.length) return;
+        shown = true;
+        h += '<div style="margin-bottom:16px">';
+        h += '<div style="display:flex;align-items:center;gap:6px;padding:0 2px 6px;font-size:10px;color:' + t.ink2 + ';font-weight:600;text-transform:uppercase;letter-spacing:0.5px">' +
+          '<div style="width:6px;height:6px;border-radius:50%;background:' + (team.color || C.pri) + '"></div>' +
+          esc(team.name || team.id || '') + (team.level ? ' · ' + esc(team.level) : '') +
+        '</div>';
+        h += '<div style="display:flex;flex-direction:column;gap:6px">';
+        tp.forEach(function (p) { h += renderPlayerCard(p, dark); });
+        h += '</div></div>';
+      });
+    }
+    // Ungrouped or empty search
+    if (!teams.length) {
+      h += '<div style="display:flex;flex-direction:column;gap:6px">';
+      players.forEach(function (p) { h += renderPlayerCard(p, dark); });
+      h += '</div>';
+      shown = players.length > 0;
+    }
+    if (!shown) {
+      h += '<div style="padding:40px;text-align:center;color:' + t.ink2 + ';font-size:13px"><div style="font-size:36px;margin-bottom:8px">🔍</div>Aucun joueur trouvé</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function renderPlayerCard(p, dark) {
+    var t = tk(dark);
+    var avail = getAvail(p.id);
+    var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+    var phone = p.phone || '';
+    var jDate = (S.journees[S.journeeN - 1] || {}).date || '';
+    var h = '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px">';
+    h += '<button data-action="player" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left;min-width:0">' +
+      avatar(init, avail, dark, 38) +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:center;gap:5px">' +
+          '<span style="font-size:13px;font-weight:600;color:' + t.ink + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</span>' +
+          '<span style="font-size:11px;color:' + t.ink2 + ';font-weight:500;flex-shrink:0">' + (p.ranking || 0) + '</span>' +
+        '</div>' +
+        playerBadges(p, dark) +
+      '</div>' +
+    '</button>';
+    if (phone) {
+      h += '<div style="display:flex;gap:6px;flex-shrink:0">';
+      h += '<a href="tel:' + esc(phone.replace(/\s/g, '')) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + C.okSoft + ';color:#15803d;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">📞</a>';
+      h += '<a href="' + esc(smsHref(phone, p.first_name || '', S.journeeN, jDate)) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + t.priSoft + ';color:' + C.priInk + ';display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">💬</a>';
+      h += '</div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  // ═══════════════════════════════════════════
+  // PLAYER DETAIL
+  // ═══════════════════════════════════════════
+  function renderPlayerDetail() {
+    var dark = S.dark; var t = tk(dark);
+    var p = getPlayer(S.playerId);
+    if (!p) return '<div style="padding:32px;text-align:center;color:' + t.ink2 + '">Joueur introuvable.</div>';
+
+    if (S.playerEdit) return renderPlayerEdit(p, dark, t);
+
+    var avail = getAvail(p.id);
+    var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+    var phone = p.phone || '';
+    var jDate = (S.journees[S.journeeN - 1] || {}).date || '';
+    var team = S.teams.find(function (tm) { return (tm.code || tm.id) === p.usual_team; });
+    var editBtn = '<button data-action="player-edit-open" style="width:32px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink + ';font-size:14px;cursor:pointer">✏️</button>';
+
+    var h = topBar('Fiche joueur', '', dark, true, editBtn);
+    h += '<div style="padding:16px">';
+
+    // Hero
+    var heroKo = avail === 'unavailable';
+    var heroBg = heroKo ? (dark ? '#7f1d1d33' : C.errSoft) : 'transparent';
+    var heroBord = heroKo ? '1px solid ' + (dark ? '#7f1d1d' : '#fecaca') : 'none';
+    h += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:' + (heroKo ? '12px' : '0') + ';background:' + heroBg + ';border:' + heroBord + ';border-radius:14px">';
+    h += '<div style="position:relative;width:64px;height:64px;flex-shrink:0">' +
+      '<div style="width:64px;height:64px;border-radius:50%;background:' + (heroKo ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,' + C.pri + ',' + C.priInk + ')') + ';color:white;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">' + esc(init) + '</div>' +
+      (heroKo ? '<span style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,0.15)">🚫</span>' : '') +
+    '</div>';
+    h += '<div style="flex:1;min-width:0">' +
+      '<div style="font-size:18px;font-weight:700;color:' + (heroKo ? (dark ? '#fca5a5' : '#b91c1c') : t.ink) + ';letter-spacing:-0.3px">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</div>' +
+      '<div style="font-size:12px;color:' + t.ink2 + ';margin-top:2px">' + (p.ranking || 0) + ' pts · ' + esc(team ? team.name : p.usual_team || '—') + '</div>' +
+      playerBadges(p, dark) +
+    '</div></div>';
+
+    // Status banners
+    if (avail === 'unavailable') {
+      h += '<div style="display:flex;align-items:flex-start;gap:10px;background:' + (dark ? '#7f1d1d40' : '#fee2e2') + ';border:1px solid ' + (dark ? '#991b1b' : '#fca5a5') + ';color:' + (dark ? '#fca5a5' : '#991b1b') + ';padding:10px 12px;border-radius:10px;margin-bottom:14px">' +
+        '<span style="font-size:16px;line-height:1.2">🚫</span>' +
+        '<div style="flex:1;font-size:12px;line-height:1.45"><strong style="font-weight:700">Indisponible</strong> pour la J' + S.journeeN + ' · ' + esc(jDate) +
+          (p.notes ? '<div style="font-weight:500;opacity:0.85;margin-top:2px">' + esc(p.notes) + '</div>' : '') +
+        '</div></div>';
+    } else if (avail === 'uncertain') {
+      h += '<div style="display:flex;align-items:center;gap:10px;background:' + (dark ? '#713f1240' : '#fef3c7') + ';border:1px solid ' + (dark ? '#854d0e' : '#fde68a') + ';color:' + (dark ? '#fde68a' : '#92400e') + ';padding:10px 12px;border-radius:10px;margin-bottom:14px;font-size:12px">' +
+        '<span style="font-size:16px">❓</span>' +
+        '<span style="flex:1"><strong style="font-weight:700">Réponse en attente</strong> — relance par SMS pré-rédigé.</span>' +
+      '</div>';
+    }
+
+    // Quick actions
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+    h += '<a href="tel:' + esc(phone.replace(/\s/g, '')) + '" style="display:flex;align-items:center;justify-content:center;gap:6px;background:' + C.ok + ';color:white;padding:12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600">📞 Appeler</a>';
+    h += '<a href="' + esc(smsHref(phone, p.first_name || '', S.journeeN, jDate)) + '" style="display:flex;align-items:center;justify-content:center;gap:6px;background:' + C.pri + ';color:white;padding:12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600">💬 SMS</a>';
+    h += '</div>';
+
+    // Availability grids — both phases, interactive
+    h += renderAvailGrid(p, 1, dark, t);
+    h += renderAvailGrid(p, 2, dark, t);
+
+    // Coordonnées
+    h += sectionWrap('Coordonnées',
+      infoRow('Téléphone',  phone ? '<a href="tel:' + esc(phone.replace(/\s/g,'')) + '" style="color:' + C.pri + ';text-decoration:none;font-weight:600">' + esc(phone) + '</a>' : '<span style="color:' + t.ink2 + '">—</span>', dark, false) +
+      infoRow('Licence',    esc(p.license_number || '—'), dark, false) +
+      infoRow('Classement', (p.ranking || 0) + ' pts', dark, false),
+      dark);
+
+    h += sectionWrap('Notes internes',
+      '<div style="padding:10px 12px;font-size:12px;color:' + (p.notes ? t.ink : t.ink2) + ';line-height:1.5;font-style:' + (p.notes ? 'normal' : 'italic') + '">' + esc(p.notes || 'Aucune note') + '</div>',
+      dark);
+
+    h += '</div>';
+    return h;
+  }
+
+  function renderAvailGrid(p, phase, dark, t) {
+    var CYCLE = ['unknown', 'available', 'unavailable', 'uncertain'];
+    var cells = S.journees.map(function (jx) {
+      var av  = getAvailForRound(p.id, phase, jx.n);
+      var bg  = av === 'available' ? C.okSoft : av === 'unavailable' ? C.errSoft : av === 'uncertain' ? C.warnSoft : t.surf2;
+      var fg  = av === 'available' ? '#15803d' : av === 'unavailable' ? '#b91c1c' : av === 'uncertain' ? '#a16207' : t.ink2;
+      var brd = av === 'unknown' ? '1px dashed ' + t.bord : '1px solid transparent';
+      return '<button data-action="avail-toggle" data-player-id="' + p.id + '" data-phase="' + phase + '" data-round="' + jx.n + '"' +
+        ' style="padding:7px 2px;border-radius:8px;background:' + bg + ';color:' + fg + ';text-align:center;font-size:11px;font-weight:600;border:' + brd + ';cursor:pointer;width:100%">' +
+        '<div>J' + jx.n + '</div><div style="font-size:13px;margin-top:2px">' + avEmoji(av) + '</div>' +
+      '</button>';
+    }).join('');
+    var hint = '<div style="font-size:10px;color:' + t.ink2 + ';padding:4px 8px 8px;text-align:right">Tap pour changer</div>';
+    return sectionWrap('Disponibilités · Phase ' + phase,
+      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:8px">' + cells + '</div>' + hint,
+      dark);
+  }
+
+  function renderPlayerEdit(p, dark, t) {
+    var cancelBtn = '<button data-action="player-edit-cancel" style="padding:0 12px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:pointer">Annuler</button>';
+    var saveBtn   = S.editSaving
+      ? '<button disabled style="padding:0 14px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:not-allowed">…</button>'
+      : '<button data-action="player-edit-save" style="padding:0 14px;height:32px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:13px;font-weight:600;cursor:pointer">Enregistrer</button>';
+    var actions = '<div style="display:flex;gap:6px">' + cancelBtn + saveBtn + '</div>';
+
+    var h = topBar('Modifier', (p.first_name || '') + ' ' + (p.last_name || ''), dark, false, actions);
+    h += '<div style="padding:16px;display:flex;flex-direction:column;gap:14px">';
+
+    var fieldStyle = 'width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + t.bord + ';border-radius:10px;background:' + t.surf + ';color:' + t.ink + ';font-size:14px;outline:none;font-family:inherit';
+
+    // Phone field
+    h += '<div>';
+    h += '<label style="display:block;font-size:11px;font-weight:600;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Téléphone</label>';
+    h += '<input data-input="edit-phone" type="tel" value="' + esc(S.editPhone) + '" placeholder="06 XX XX XX XX" style="' + fieldStyle + '">';
+    h += '</div>';
+
+    // Notes textarea
+    h += '<div>';
+    h += '<label style="display:block;font-size:11px;font-weight:600;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Notes internes</label>';
+    h += '<textarea data-input="edit-notes" rows="5" placeholder="Disponibilités habituelles, contraintes, remarques…" style="' + fieldStyle + ';resize:vertical;line-height:1.5">' + esc(S.editNotes) + '</textarea>';
+    h += '</div>';
+
+    // Read-only info
+    h += sectionWrap('Informations FFTT (non modifiables)',
+      infoRow('Licence',    esc(p.license_number || '—'), dark, false) +
+      infoRow('Classement', (p.ranking || 0) + ' pts',    dark, false),
+      dark);
+
+    h += '</div>';
+    return h;
+  }
+
+  // ═══════════════════════════════════════════
+  // EFFECTIFS DE PHASE
+  // ═══════════════════════════════════════════
+  function renderSquads() {
+    var dark = S.dark; var t = tk(dark);
+    var phase = S.phase + 1; // 1-indexed
+    var teams = S.teams;
+
+    // Bouton ventilation
+    var ventBtn = S.squadLoading
+      ? '<button disabled style="padding:0 14px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:not-allowed">…</button>'
+      : '<button data-action="squad-ventilate" style="padding:0 12px;height:32px;border-radius:8px;border:none;background:' + C.ok + ';color:white;font-size:13px;font-weight:600;cursor:pointer">⚡ Ventiler</button>';
+    var h = topBar('Effectifs · Phase ' + phase, teams.length + ' équipes', dark, true, ventBtn);
+
+    if (!teams.length) {
+      h += '<div style="padding:32px;text-align:center;color:' + t.ink2 + ';font-size:13px">Aucune équipe configurée.<br>Allez dans Réglages pour en ajouter.</div>';
+      return h;
+    }
+
+    h += '<div style="padding:12px;display:flex;flex-direction:column;gap:12px">';
+
+    // Picker joueur (overlay inline)
+    if (S.squadPickerTeam) {
+      h += renderSquadPicker(S.squadPickerTeam, phase, dark, t);
+      h += '</div>';
+      return h;
+    }
+
+    teams.forEach(function (team) {
+      var teamCode = team.code || team.id || '';
+      var squadIds = getSquadIds(teamCode, phase);
+      var squadPlayers = squadIds.map(getPlayer).filter(Boolean);
+
+      h += '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:12px;overflow:hidden">';
+      // En-tête équipe
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid ' + t.bord + '">';
+      h += '<div style="display:flex;align-items:center;gap:8px">';
+      h += '<div style="width:8px;height:8px;border-radius:50%;background:' + (team.color || C.pri) + ';flex-shrink:0"></div>';
+      h += '<span style="font-size:13px;font-weight:700;color:' + t.ink + '">' + esc(team.name || teamCode) + '</span>';
+      if (team.level) h += '<span style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level) + '</span>';
+      h += '<span style="font-size:11px;color:' + t.ink2 + '">' + squadPlayers.length + ' joueur' + (squadPlayers.length > 1 ? 's' : '') + '</span>';
+      h += '</div>';
+      h += '<button data-action="squad-picker-open" data-team="' + esc(teamCode) + '" style="width:28px;height:28px;border-radius:6px;border:none;background:' + C.pri + ';color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>';
+      h += '</div>';
+
+      // Liste des joueurs du squad
+      if (!squadPlayers.length) {
+        h += '<div style="padding:14px 12px;font-size:12px;color:' + t.ink2 + ';font-style:italic;text-align:center">Aucun joueur — appuyez sur + pour en ajouter</div>';
+      } else {
+        h += '<div>';
+        squadPlayers.forEach(function (p) {
+          var avail = getAvail(p.id);
+          var init  = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+          h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid ' + t.bord + '">';
+          h += avatar(init, avail, dark, 32);
+          h += '<div style="flex:1;min-width:0">';
+          h += '<span style="font-size:13px;font-weight:600;color:' + t.ink + '">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</span>';
+          h += '<span style="font-size:11px;color:' + t.ink2 + ';margin-left:6px">' + (p.ranking || 0) + '</span>';
+          h += playerBadges(p, dark);
+          h += '</div>';
+          h += '<button data-action="squad-remove" data-team="' + esc(teamCode) + '" data-player-id="' + p.id + '" style="width:28px;height:28px;border-radius:6px;border:none;background:' + C.errSoft + ';color:' + C.err + ';font-size:14px;cursor:pointer;flex-shrink:0">×</button>';
+          h += '</div>';
+        });
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+
+    h += '</div>';
+    return h;
+  }
+
+  function renderSquadPicker(teamCode, phase, dark, t) {
+    var team = S.teams.find(function (tm) { return (tm.code || tm.id) === teamCode; });
+    var squadIds = getSquadIds(teamCode, phase);
+    var q = S.squadPickerQ.toLowerCase();
+
+    var available = S.players.filter(function (p) {
+      if (squadIds.indexOf(p.id) !== -1) return false; // déjà dans le squad
+      if (q) {
+        var name = ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase();
+        if (!name.includes(q)) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      // Joueurs habituels de l'équipe en premier
+      var aUsual = a.usual_team === teamCode;
+      var bUsual = b.usual_team === teamCode;
+      if (aUsual && !bUsual) return -1;
+      if (!aUsual && bUsual) return 1;
+      return (b.ranking || 0) - (a.ranking || 0);
+    });
+
+    var teamName = team ? (team.name || teamCode) : teamCode;
+    var h = '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:12px;overflow:hidden">';
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid ' + t.bord + '">';
+    h += '<button data-action="squad-picker-close" style="width:28px;height:28px;border-radius:6px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:16px;cursor:pointer">‹</button>';
+    h += '<span style="flex:1;font-size:13px;font-weight:700;color:' + t.ink + '">Ajouter à ' + esc(teamName) + '</span>';
+    h += '</div>';
+    h += '<div style="padding:8px 10px;border-bottom:1px solid ' + t.bord + '">';
+    h += '<input data-input="squad-picker-search" value="' + esc(S.squadPickerQ) + '" placeholder="Rechercher…" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid ' + t.bord + ';border-radius:8px;background:' + t.surf2 + ';color:' + t.ink + ';font-size:13px;outline:none">';
+    h += '</div>';
+    h += '<div style="max-height:340px;overflow-y:auto">';
+    if (!available.length) {
+      h += '<div style="padding:20px;text-align:center;font-size:12px;color:' + t.ink2 + '">Aucun joueur disponible</div>';
+    }
+    available.forEach(function (p) {
+      var init  = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+      var avail = getAvail(p.id);
+      var isUsual = p.usual_team === teamCode;
+      h += '<button data-action="squad-add" data-team="' + esc(teamCode) + '" data-player-id="' + p.id + '"';
+      h += ' style="display:flex;align-items:center;gap:10px;padding:8px 12px;width:100%;background:transparent;border:none;border-bottom:1px solid ' + t.bord + ';cursor:pointer;text-align:left">';
+      h += avatar(init, avail, dark, 32);
+      h += '<div style="flex:1;min-width:0">';
+      var pTeamObj2 = S.teams.find(function (tm) { return (tm.code || tm.id) === p.usual_team; });
+      var pTeamLbl2 = pTeamObj2 ? (pTeamObj2.name || p.usual_team) : p.usual_team;
+      h += '<div style="font-size:13px;font-weight:600;color:' + t.ink + '">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + (pTeamLbl2 ? ' <span style="font-size:10px;color:' + t.ink2 + ';font-weight:600">' + esc(pTeamLbl2) + '</span>' : '') + '</div>';
+      h += '<div style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + ' pts</div>';
+      h += '</div>';
+      h += '</button>';
+    });
+    h += '</div></div>';
+    return h;
+  }
+
 
   // ═══════════════════════════════════════════
   // RÉGLAGES
@@ -660,7 +1110,7 @@
         default:         screen = renderDashboard(); break;
       }
     }
-    return '<div style="width:100%;height:100dvh;display:flex;flex-direction:column;background:' + t.bg + ';color:' + t.ink + ';overflow:hidden;position:relative">' +
+    return '<div style="width:100%;height:100%;display:flex;flex-direction:column;background:' + t.bg + ';color:' + t.ink + ';overflow:hidden;position:relative">' +
       off +
       '<div style="flex:1;overflow-y:auto;overflow-x:hidden;background:' + t.bg + ';-webkit-overflow-scrolling:touch">' + screen + '</div>' +
       renderNav() +
