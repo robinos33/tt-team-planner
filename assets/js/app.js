@@ -106,8 +106,17 @@
   // ═══════════════════════════════════════════
   // API
   // ═══════════════════════════════════════════
+  function apiUrl(path) {
+    // When pretty permalinks are off, API ends with ?rest_route=...
+    // Extra query params must use & not ? to avoid breaking the route.
+    if (API.indexOf('?') !== -1 && path.indexOf('?') !== -1) {
+      return API + path.replace('?', '&');
+    }
+    return API + path;
+  }
+
   function apiFetch(path, opts) {
-    return fetch(API + path, Object.assign(
+    return fetch(apiUrl(path), Object.assign(
       { headers: { 'X-WP-Nonce': NONCE, 'Content-Type': 'application/json' } },
       opts || {}
     )).then(function (r) {
