@@ -53,6 +53,7 @@ class Assets
                 (array) get_option('ttp_journee_dates_p1', array_fill(0, 7, '')),
                 (array) get_option('ttp_journee_dates_p2', array_fill(0, 7, '')),
             ],
+            'version'           => TTP_VERSION,
             'maxForeignPlayers' => self::MAX_FOREIGN,
             'smsTemplates'      => [
                 'availability' => get_option('ttp_sms_template_availability', ''),

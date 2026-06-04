@@ -1033,14 +1033,12 @@
 
     // Affichage
     h += sectionWrap('Affichage',
-      renderToggle('Mode sombre', S.dark, 'toggle-dark', t) +
-      '<div style="display:flex;justify-content:space-between;padding:8px 12px;font-size:12px;align-items:center;color:' + t.ink + '"><span>Badges en couleur</span><span style="color:' + C.ok + ';font-size:11px;font-weight:600">Activé</span></div>',
+      renderToggle('Mode sombre', S.dark, 'toggle-dark', t),
       dark);
 
     // Données
     h += sectionWrap('Données',
       infoRow('Joueurs synchronisés', String(S.players.length), dark, false) +
-      infoRow('Hors ligne', navigator.onLine ? '✅ Connecté' : '📡 Hors ligne', dark, false) +
       '<div style="padding:8px 12px">' +
         '<button data-action="sync" style="width:100%;background:' + C.pri + ';color:white;border:none;padding:10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' + (S.syncing ? 'Synchronisation…' : '🔄 Synchroniser les joueurs') + '</button>' +
       '</div>',
@@ -1054,8 +1052,7 @@
 
     // About
     h += sectionWrap('À propos',
-      infoRow('Version', '1.0.0 · Open source', dark, false) +
-      infoRow('Plugin', 'TT Team Planner', dark, false),
+      infoRow('Version', esc(cfg.version || '—'), dark, false),
       dark);
 
     h += '</div>';
