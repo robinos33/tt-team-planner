@@ -934,7 +934,9 @@
   var root;
 
   function setState(patch) {
+    var prevScreen = S.screen;
     Object.assign(S, patch);
+    if ('screen' in patch && S.screen !== prevScreen) pushHash(S);
     render();
   }
   }
@@ -994,6 +996,13 @@
     render();
   }
 
+  function applyHash() {
+    var parsed = hashToState(w.location.hash);
+    Object.assign(S, parsed);
+    if (parsed.screen === 'journee') { loadCompositions(); loadAlerts(); }
+    render();
+  }
+
   function init() {
     root = d.getElementById('ttp-app');
     if (!root) return;
@@ -1001,8 +1010,22 @@
     w.addEventListener('online',  function () { setState({ offline: false }); });
     w.addEventListener('offline', function () { setState({ offline: true });  });
 
+    // Restore state from URL hash (deep link / browser back-forward)
+    w.addEventListener('popstate', applyHash);
+
+    // Apply hash from URL on first load
+    var initial = hashToState(w.location.hash);
+    Object.assign(S, initial);
+    // Ensure the initial URL reflects the canonical hash
+    history.replaceState(null, '', screenToHash(S));
+
     render();          // show loading spinner immediately
-    loadAll();         // fetch players + availabilities
+    // After data loads, re-apply hash (player detail needs players in S)
+    loadAll().then(function () {
+      var h = hashToState(w.location.hash);
+      if (h.screen !== 'dashboard') { Object.assign(S, h); render(); }
+      if (h.screen === 'journee') { loadCompositions(); loadAlerts(); }
+    });
     registerSW();
   }
 
