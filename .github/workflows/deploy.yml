@@ -1,0 +1,22 @@
+name: Deploy to WordPress.org SVN
+
+on:
+  push:
+    tags:
+      - 'v*'   # Déclenché sur les tags v1.0.2, v1.1.0, etc.
+
+jobs:
+  deploy:
+    name: Deploy plugin to WordPress.org
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to WordPress.org SVN
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SLUG: tt-team-planner   # slug WordPress.org
