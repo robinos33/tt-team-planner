@@ -56,6 +56,7 @@
     loading: true, syncing: false, loadError: null,
     picker: null, pickerQ: '',
     searchQ: '', playerFilter: 'all',
+    playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
     teams: cfg.teams || [],
     journees: buildJournees()
   };
@@ -684,6 +685,8 @@
 
   function renderPlayerCard(p, dark) {
     var t = tk(dark);
+    if (S.playerEdit) return renderPlayerEdit(p, dark, t);
+
     var avail = getAvail(p.id);
     var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
     var phone = p.phone || '';
@@ -722,7 +725,7 @@
     var phone = p.phone || '';
     var jDate = (S.journees[S.journeeN - 1] || {}).date || '';
     var team = S.teams.find(function (tm) { return (tm.code || tm.id) === p.usual_team; });
-    var editBtn = '<button style="width:32px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink + ';font-size:14px;cursor:pointer">✏️</button>';
+    var editBtn = '<button data-action="player-edit-open" style="width:32px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink + ';font-size:14px;cursor:pointer">✏️</button>';
 
     var h = topBar('Fiche joueur', '', dark, true, editBtn);
     h += '<div style="padding:16px">';
@@ -776,16 +779,49 @@
 
     // Coordonnées
     h += sectionWrap('Coordonnées',
-      infoRow('Téléphone', esc(phone || '—'), dark, false) +
-      infoRow('Licence',   esc(p.license_number || '—'), dark, false) +
+      infoRow('Téléphone',  phone ? '<a href="tel:' + esc(phone.replace(/\s/g,'')) + '" style="color:' + C.pri + ';text-decoration:none;font-weight:600">' + esc(phone) + '</a>' : '<span style="color:' + t.ink2 + '">—</span>', dark, false) +
+      infoRow('Licence',    esc(p.license_number || '—'), dark, false) +
       infoRow('Classement', (p.ranking || 0) + ' pts', dark, false),
       dark);
 
-    if (p.notes) {
-      h += sectionWrap('Notes internes',
-        '<div style="padding:10px 12px;font-size:12px;color:' + t.ink + ';line-height:1.5">' + esc(p.notes) + '</div>',
-        dark);
-    }
+    h += sectionWrap('Notes internes',
+      '<div style="padding:10px 12px;font-size:12px;color:' + (p.notes ? t.ink : t.ink2) + ';line-height:1.5;font-style:' + (p.notes ? 'normal' : 'italic') + '">' + esc(p.notes || 'Aucune note') + '</div>',
+      dark);
+
+  function renderPlayerEdit(p, dark, t) {
+    var cancelBtn = '<button data-action="player-edit-cancel" style="padding:0 12px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:pointer">Annuler</button>';
+    var saveBtn   = S.editSaving
+      ? '<button disabled style="padding:0 14px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:not-allowed">…</button>'
+      : '<button data-action="player-edit-save" style="padding:0 14px;height:32px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:13px;font-weight:600;cursor:pointer">Enregistrer</button>';
+    var actions = '<div style="display:flex;gap:6px">' + cancelBtn + saveBtn + '</div>';
+
+    var h = topBar('Modifier', (p.first_name || '') + ' ' + (p.last_name || ''), dark, false, actions);
+    h += '<div style="padding:16px;display:flex;flex-direction:column;gap:14px">';
+
+    var fieldStyle = 'width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid ' + t.bord + ';border-radius:10px;background:' + t.surf + ';color:' + t.ink + ';font-size:14px;outline:none;font-family:inherit';
+
+    // Phone field
+    h += '<div>';
+    h += '<label style="display:block;font-size:11px;font-weight:600;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Téléphone</label>';
+    h += '<input data-input="edit-phone" type="tel" value="' + esc(S.editPhone) + '" placeholder="06 XX XX XX XX" style="' + fieldStyle + '">';
+    h += '</div>';
+
+    // Notes textarea
+    h += '<div>';
+    h += '<label style="display:block;font-size:11px;font-weight:600;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Notes internes</label>';
+    h += '<textarea data-input="edit-notes" rows="5" placeholder="Disponibilités habituelles, contraintes, remarques…" style="' + fieldStyle + ';resize:vertical;line-height:1.5">' + esc(S.editNotes) + '</textarea>';
+    h += '</div>';
+
+    // Read-only info
+    h += sectionWrap('Informations FFTT (non modifiables)',
+      infoRow('Licence',    esc(p.license_number || '—'), dark, false) +
+      infoRow('Classement', (p.ranking || 0) + ' pts',    dark, false),
+      dark);
+
+    h += '</div>';
+    return h;
+  }
+
   // ═══════════════════════════════════════════
   // ALERTES
   // ═══════════════════════════════════════════
@@ -961,6 +997,28 @@
     if (inp) inp.addEventListener('input', function (e) { S.searchQ = e.target.value; render(); });
     var pi = root.querySelector('[data-input="picker-search"]');
     if (pi) pi.addEventListener('input', function (e) { S.pickerQ = e.target.value; render(); });
+    var ep = root.querySelector('[data-input="edit-phone"]');
+    if (ep) ep.addEventListener('input', function (e) { S.editPhone = e.target.value; });
+    var en = root.querySelector('[data-input="edit-notes"]');
+    if (en) en.addEventListener('input', function (e) { S.editNotes = e.target.value; });
+  }
+
+
+  function savePlayerEdit() {
+    var id = S.playerId;
+    setState({ editSaving: true });
+    apiFetch('/players/' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ phone: S.editPhone, notes: S.editNotes })
+    }).then(function (updated) {
+      // Mise à jour optimiste dans S.players
+      S.players = S.players.map(function (p) {
+        return String(p.id) === String(id) ? updated : p;
+      });
+      setState({ playerEdit: false, editSaving: false });
+    }).catch(function () {
+      setState({ editSaving: false });
+    });
   }
 
   function handleClick(e) {
@@ -984,6 +1042,12 @@
       case 'slot-remove':  e.stopPropagation(); removeSlot(el.dataset.team, parseInt(el.dataset.slot)); break;
       case 'picker-close': setState({ picker: null, pickerQ: '' }); break;
       case 'picker-clear':      S.pickerQ = ''; render(); break;
+      case 'player-edit-open':
+        var ep = getPlayer(S.playerId);
+        if (ep) setState({ playerEdit: true, editPhone: ep.phone || '', editNotes: ep.notes || '', editSaving: false });
+        break;
+      case 'player-edit-cancel': setState({ playerEdit: false }); break;
+      case 'player-edit-save':   savePlayerEdit(); break;
     }
   }
   // ═══════════════════════════════════════════

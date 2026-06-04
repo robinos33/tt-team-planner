@@ -131,13 +131,16 @@ class PlayerRepository
         return $wpdb->insert_id;
     }
 
-    public function updateNotes(int $id, string $notes): bool
+    public function updateContactInfo(int $id, string $phone, string $notes): bool
     {
         global $wpdb;
         return (bool) $wpdb->update(
             $this->table,
-            ['notes' => sanitize_textarea_field($notes)],
-            ['id'    => $id]
+            [
+                'phone' => sanitize_text_field($phone),
+                'notes' => sanitize_textarea_field($notes),
+            ],
+            ['id' => $id]
         );
     }
 

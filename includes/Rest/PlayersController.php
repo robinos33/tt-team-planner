@@ -57,9 +57,15 @@ class PlayersController
     {
         $repo  = new PlayerRepository();
         $notes = sanitize_textarea_field($request->get_param('notes') ?? '');
-        $ok    = $repo->updateNotes((int) $request['id'], $notes);
+        $phone = sanitize_text_field($request->get_param('phone') ?? '');
+        $ok    = $repo->updateContactInfo((int) $request['id'], $phone, $notes);
 
-        return new WP_REST_Response(['success' => $ok], $ok ? 200 : 500);
+        if (! $ok) {
+            return new WP_REST_Response(['success' => false], 500);
+        }
+
+        $player = $repo->findById((int) $request['id']);
+        return new WP_REST_Response($player?->toArray(), 200);
     }
 
     public function canRead(): bool
