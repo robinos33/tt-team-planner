@@ -1141,7 +1141,7 @@
       case 'player':       if (!S.picker) setState({ playerId: parseInt(v), screen: 'player' }); break;
       case 'back':         goBack(); break;
       case 'goto':         setState({ screen: el.dataset.screen, tab: el.dataset.tab || el.dataset.screen }); break;
-      case 'phase':        setState({ phase: parseInt(v), journees: null }); S.journees = buildJournees(); render(); break;
+      case 'phase':        var newPhase = parseInt(v); setState({ phase: newPhase, journees: buildJournees(newPhase) }); break;
       case 'team-tab':     setState({ activeTeamI: parseInt(v) }); break;
       case 'filter':       setState({ playerFilter: v }); break;
       case 'toggle-dark':  setState({ dark: !S.dark }); break;
