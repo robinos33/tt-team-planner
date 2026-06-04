@@ -486,7 +486,83 @@
     });
     h += '</div>';
 
-    // Alert banner
+    // Team carousel
+    if (teams.length) {
+      h += '<div style="display:flex;overflow-x:auto;padding:8px 12px 4px;gap:8px;-webkit-overflow-scrolling:touch">';
+      teams.forEach(function (team, i) {
+        var active = i === S.activeTeamI;
+        var slots = getCompoSlots(team.code || team.id || '');
+        var filled = slots.filter(function (s) { return s.player_id; }).length;
+        h += '<button data-action="team-tab" data-value="' + i + '" style="padding:6px 10px;border-radius:8px;border:1px solid ' + (active ? (team.color || C.pri) : t.bord) + ';background:' + (active ? (team.color || C.pri) : t.surf) + ';color:' + (active ? 'white' : t.ink) + ';cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0">' +
+          '<span>' + esc(team.code || team.id || 'E' + (i + 1)) + '</span>' +
+          '<span style="opacity:0.7">' + filled + '/4</span>' +
+        '</button>';
+      });
+      h += '</div>';
+      if (teams[S.activeTeamI]) {
+        h += renderTeamCompo(teams[S.activeTeamI], dark);
+      }
+    } else {
+      h += '<div style="padding:32px;text-align:center;color:' + t.ink2 + ';font-size:13px"><div style="font-size:32px;margin-bottom:8px">📋</div>Aucune équipe.<br><small>Configurez vos équipes dans les réglages admin.</small></div>';
+    }
+    return h;
+  }
+
+  function renderTeamCompo(team, dark) {
+    var t = tk(dark);
+    var tc = team.color || C.pri;
+    var slots = getCompoSlots(team.code || team.id || '');
+    var arr = [null, null, null, null];
+    slots.forEach(function (s) { if (s.slot_number >= 1 && s.slot_number <= 4) arr[s.slot_number - 1] = s; });
+    var filled = arr.filter(function (s) { return s && s.player_id; }).length;
+
+    var h = '<div style="padding:12px">';
+    h += '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-left:4px solid ' + tc + ';border-radius:10px;padding:12px;margin-bottom:10px">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">' + esc(team.name || team.id || 'Équipe') + '</div><div style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level || '') + '</div></div>' +
+        badge(filled + '/4', filled === 4 ? 'ok' : 'warn', dark) +
+      '</div>' +
+    '</div>';
+
+    h += '<div style="font-size:10px;color:' + t.ink2 + ';font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding:0 2px">4 slots joueurs</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:8px">';
+    arr.forEach(function (slot, i) {
+      var num = i + 1;
+      var tcode = esc(team.code || team.id || '');
+      if (!slot || !slot.player_id) {
+        h += '<button data-action="slot-open" data-team="' + tcode + '" data-slot="' + num + '" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px;background:transparent;border:1px dashed ' + t.bord + ';border-radius:10px;cursor:pointer;text-align:left;min-height:56px">' +
+          '<div style="width:22px;height:22px;border-radius:6px;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">' + num + '</div>' +
+          '<div style="flex:1;font-size:13px;color:' + t.ink2 + ';font-weight:500">Slot vide<div style="font-size:11px;opacity:0.7;margin-top:2px">Toucher pour ajouter</div></div>' +
+          '<span style="color:' + C.pri + ';font-size:18px;font-weight:600">+</span>' +
+        '</button>';
+      } else {
+        var p = getPlayer(slot.player_id);
+        if (!p) { h += '<div style="padding:10px;background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;font-size:12px;color:' + t.ink2 + '">Joueur introuvable</div>'; return; }
+        var avail = getAvail(p.id);
+        var danger = avail === 'unavailable' || p.is_burned;
+        var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+        h += '<div style="display:flex;align-items:center;background:' + t.surf + ';border:1px solid ' + (danger ? C.err : t.bord) + ';border-radius:10px;overflow:hidden">' +
+          '<button data-action="player" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;padding:10px;background:transparent;border:none;cursor:pointer;text-align:left;min-width:0">' +
+            '<div style="width:22px;height:22px;border-radius:6px;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + num + '</div>' +
+            '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,' + C.pri + ',' + C.priInk + ');color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + esc(init) + '</div>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-size:13px;font-weight:600;color:' + t.ink + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</div>' +
+              '<div style="display:flex;align-items:center;gap:6px;margin-top:3px">' +
+                '<span style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + '</span>' +
+                '<span style="font-size:11px;color:' + avColor(avail, dark) + '">' + avEmoji(avail) + ' ' + avStatus(avail) + '</span>' +
+              '</div>' +
+              playerBadges(p, dark) +
+            '</div>' +
+          '</button>' +
+          '<button data-action="slot-remove" data-team="' + tcode + '" data-slot="' + num + '" style="width:40px;height:100%;min-height:56px;border:none;border-left:1px solid ' + t.bord + ';background:transparent;color:' + t.ink2 + ';font-size:15px;cursor:pointer;flex-shrink:0" title="Retirer">✕</button>' +
+        '</div>';
+      }
+    });
+    h += '</div>';
+    h += '</div>';
+    return h;
+  }
+
   // ═══════════════════════════════════════════
   // RÉGLAGES
   // ═══════════════════════════════════════════
