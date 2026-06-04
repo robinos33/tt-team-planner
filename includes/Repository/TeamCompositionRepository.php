@@ -30,6 +30,20 @@ class TeamCompositionRepository
     }
 
     /** @return TeamComposition[] */
+    public function findByPhase(string $season, int $phase): array
+    {
+        global $wpdb;
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY round, team_code, slot_number",
+                $season, $phase
+            ),
+            ARRAY_A
+        );
+        return array_map([TeamComposition::class, 'fromRow'], $rows ?: []);
+    }
+
+    /** @return TeamComposition[] */
     public function findByTeamAndRound(string $season, int $phase, int $round, string $teamCode): array
     {
         global $wpdb;
