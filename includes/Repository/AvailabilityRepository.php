@@ -57,6 +57,20 @@ class AvailabilityRepository
         return array_map([Availability::class, 'fromRow'], $rows ?: []);
     }
 
+    /** @return Availability[] */
+    public function findByPhase(string $season, int $phase): array
+    {
+        global $wpdb;
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY player_id, round",
+                $season, $phase
+            ),
+            ARRAY_A
+        );
+        return array_map([Availability::class, 'fromRow'], $rows ?: []);
+    }
+
     public function save(int $playerId, string $season, int $phase, int $round, string $status, string $comment = ''): void
     {
         global $wpdb;

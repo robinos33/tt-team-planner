@@ -7,6 +7,7 @@ use TT\TeamPlanner\Admin\SettingsPage;
 use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Front\Shortcode;
 use TT\TeamPlanner\Front\StandaloneTemplate;
+use TT\TeamPlanner\Rest\PhaseSquadController;
 use TT\TeamPlanner\Rest\PlayersController;
 use TT\TeamPlanner\Rest\AvailabilityController;
 use TT\TeamPlanner\Rest\TeamsController;
@@ -60,6 +61,7 @@ final class Plugin
 
     public function registerRestRoutes(): void
     {
+        (new PhaseSquadController())->registerRoutes();
         (new PlayersController())->registerRoutes();
         (new AvailabilityController())->registerRoutes();
         (new TeamsController())->registerRoutes();

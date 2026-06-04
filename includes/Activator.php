@@ -99,6 +99,19 @@ class Activator
             KEY player_season (player_id, season, phase, round)
         ) $charset;";
 
+        $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_phase_squads (
+            id         bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            season     varchar(20)         NOT NULL DEFAULT '',
+            phase      tinyint(1)          NOT NULL DEFAULT 1,
+            team_code  varchar(20)         NOT NULL DEFAULT '',
+            player_id  bigint(20) UNSIGNED NOT NULL,
+            position   smallint(5)         NOT NULL DEFAULT 0,
+            created_at datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY season_phase_team_player (season, phase, team_code, player_id),
+            KEY season_phase (season, phase)
+        ) $charset;";
+
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         foreach ($sql as $query) {
             dbDelta($query);

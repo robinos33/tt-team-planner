@@ -57,6 +57,7 @@
     picker: null, pickerQ: '',
     searchQ: '', playerFilter: 'all',
     playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
+    squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
     teams: cfg.teams || [],
     journees: buildJournees(cfg.phase || 0)
   };
@@ -162,9 +163,10 @@
   function loadAll() {
     return Promise.all([
       apiFetch('/players'),
-      apiFetch('/availability?season=' + encodeURIComponent(cfg.season || ''))
+      apiFetch('/availability?season=' + encodeURIComponent(cfg.season || '')),
+      apiFetch('/phase-squads?season=' + encodeURIComponent(cfg.season || '') + '&phase=' + (S.phase + 1))
     ]).then(function (res) {
-      setState({ players: res[0] || [], availabilities: res[1] || [], loading: false, loadError: null });
+      setState({ players: res[0] || [], availabilities: res[1] || [], squads: res[2] || [], loading: false, loadError: null });
     }).catch(function (err) {
       setState({ loading: false, loadError: String(err) });
     });
@@ -251,6 +253,24 @@
     return S.compositions
       .filter(function (c) { return c.team_code === teamCode; })
       .sort(function (a, b) { return a.slot_number - b.slot_number; });
+  }
+
+  function getSquadIds(teamCode, phase) {
+    return S.squads
+      .filter(function (s) { return s.team_code === teamCode && s.phase === phase; })
+      .map(function (s) { return s.player_id; });
+  }
+
+  function isInSquad(playerId, teamCode, phase) {
+    return S.squads.some(function (s) {
+      return s.team_code === teamCode && s.phase === phase && String(s.player_id) === String(playerId);
+    });
+  }
+
+  function loadSquads() {
+    apiFetch('/phase-squads?season=' + encodeURIComponent(cfg.season || '') + '&phase=' + (S.phase + 1))
+      .then(function (res) { setState({ squads: res || [] }); })
+      .catch(function () {});
   }
 
   function filteredPlayers() {
@@ -349,6 +369,7 @@
       { id: 'dashboard', icon: '🏠', label: 'Accueil' },
       { id: 'journees',  icon: '📅', label: 'Journées' },
       { id: 'joueurs',   icon: '🏓', label: 'Joueurs' },
+      { id: 'squads',    icon: '📋', label: 'Effectifs' },
       { id: 'alertes',   icon: '🔔', label: 'Alertes' },
       { id: 'reglages',  icon: '⚙️',  label: 'Réglages' }
     ];
@@ -593,12 +614,16 @@
       if (c.player_id && c.team_code === teamCode && c.slot_number !== slotNum) inTeam[c.player_id] = true;
     });
 
-    // Filtrage + tri : joueurs habituels en tête, puis classement DESC
+    // Filtrage + tri : squad en tête, puis joueurs habituels, puis classement DESC
+    var squadIds = getSquadIds(teamCode, S.phase + 1);
     var filtered = S.players.filter(function (p) {
       if (!q) return true;
       return ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase().includes(q)
           || String(p.ranking || '').includes(q);
     }).sort(function (a, b) {
+      var aInSquad = squadIds.indexOf(a.id) !== -1 ? 0 : 1;
+      var bInSquad = squadIds.indexOf(b.id) !== -1 ? 0 : 1;
+      if (aInSquad !== bInSquad) return aInSquad - bInSquad;
       var au = (a.usual_team === teamCode) ? 0 : 1;
       var bu = (b.usual_team === teamCode) ? 0 : 1;
       return au !== bu ? au - bu : (b.ranking || 0) - (a.ranking || 0);
@@ -637,7 +662,8 @@
     } else {
       var lastGroup = null;
       filtered.forEach(function (p) {
-        var grp = p.usual_team === teamCode ? 'Joueurs habituels' : 'Autres joueurs';
+        var inSq = squadIds.indexOf(p.id) !== -1;
+        var grp  = inSq ? 'Effectif de phase' : (p.usual_team === teamCode ? 'Joueurs habituels' : 'Autres joueurs');
         if (grp !== lastGroup) {
           lastGroup = grp;
           h += '<div style="padding:8px 12px 4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:' + t.ink2 + '">' + grp + '</div>';
@@ -664,6 +690,7 @@
         h += '<div style="font-size:13px;font-weight:600;color:' + t.ink + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</div>';
         h += '<div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap">';
         h += '<span style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + '</span>';
+        if (squadIds.indexOf(p.id) !== -1) h += badge('📋 ' + teamName, 'primary', dark, true);
         if (busy) h += badge('Déjà en ' + elsewhere[p.id], 'warn', dark, true);
         h += '</div>' + playerBadges(p, dark) + '</div>';
 
@@ -884,6 +911,131 @@
   }
 
   // ═══════════════════════════════════════════
+  // EFFECTIFS DE PHASE
+  // ═══════════════════════════════════════════
+  function renderSquads() {
+    var dark = S.dark; var t = tk(dark);
+    var phase = S.phase + 1; // 1-indexed
+    var teams = S.teams;
+
+    // Bouton ventilation
+    var ventBtn = S.squadLoading
+      ? '<button disabled style="padding:0 14px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:not-allowed">…</button>'
+      : '<button data-action="squad-ventilate" style="padding:0 12px;height:32px;border-radius:8px;border:none;background:' + C.ok + ';color:white;font-size:13px;font-weight:600;cursor:pointer">⚡ Ventiler</button>';
+    var h = topBar('Effectifs · Phase ' + phase, teams.length + ' équipes', dark, true, ventBtn);
+
+    if (!teams.length) {
+      h += '<div style="padding:32px;text-align:center;color:' + t.ink2 + ';font-size:13px">Aucune équipe configurée.<br>Allez dans Réglages pour en ajouter.</div>';
+      return h;
+    }
+
+    h += '<div style="padding:12px;display:flex;flex-direction:column;gap:12px">';
+
+    // Picker joueur (overlay inline)
+    if (S.squadPickerTeam) {
+      h += renderSquadPicker(S.squadPickerTeam, phase, dark, t);
+      h += '</div>';
+      return h;
+    }
+
+    teams.forEach(function (team) {
+      var teamCode = team.code || team.id || '';
+      var squadIds = getSquadIds(teamCode, phase);
+      var squadPlayers = squadIds.map(getPlayer).filter(Boolean);
+
+      h += '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:12px;overflow:hidden">';
+      // En-tête équipe
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid ' + t.bord + '">';
+      h += '<div style="display:flex;align-items:center;gap:8px">';
+      h += '<div style="width:8px;height:8px;border-radius:50%;background:' + (team.color || C.pri) + ';flex-shrink:0"></div>';
+      h += '<span style="font-size:13px;font-weight:700;color:' + t.ink + '">' + esc(team.name || teamCode) + '</span>';
+      if (team.level) h += '<span style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level) + '</span>';
+      h += '<span style="font-size:11px;color:' + t.ink2 + '">' + squadPlayers.length + ' joueur' + (squadPlayers.length > 1 ? 's' : '') + '</span>';
+      h += '</div>';
+      h += '<button data-action="squad-picker-open" data-team="' + esc(teamCode) + '" style="width:28px;height:28px;border-radius:6px;border:none;background:' + C.pri + ';color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>';
+      h += '</div>';
+
+      // Liste des joueurs du squad
+      if (!squadPlayers.length) {
+        h += '<div style="padding:14px 12px;font-size:12px;color:' + t.ink2 + ';font-style:italic;text-align:center">Aucun joueur — appuyez sur + pour en ajouter</div>';
+      } else {
+        h += '<div>';
+        squadPlayers.forEach(function (p) {
+          var avail = getAvail(p.id);
+          var init  = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+          h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid ' + t.bord + '">';
+          h += avatar(init, avail, dark, 32);
+          h += '<div style="flex:1;min-width:0">';
+          h += '<span style="font-size:13px;font-weight:600;color:' + t.ink + '">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</span>';
+          h += '<span style="font-size:11px;color:' + t.ink2 + ';margin-left:6px">' + (p.ranking || 0) + '</span>';
+          h += playerBadges(p, dark);
+          h += '</div>';
+          h += '<button data-action="squad-remove" data-team="' + esc(teamCode) + '" data-player-id="' + p.id + '" style="width:28px;height:28px;border-radius:6px;border:none;background:' + C.errSoft + ';color:' + C.err + ';font-size:14px;cursor:pointer;flex-shrink:0">×</button>';
+          h += '</div>';
+        });
+        h += '</div>';
+      }
+      h += '</div>';
+    });
+
+    h += '</div>';
+    return h;
+  }
+
+  function renderSquadPicker(teamCode, phase, dark, t) {
+    var team = S.teams.find(function (tm) { return (tm.code || tm.id) === teamCode; });
+    var squadIds = getSquadIds(teamCode, phase);
+    var q = S.squadPickerQ.toLowerCase();
+
+    var available = S.players.filter(function (p) {
+      if (squadIds.indexOf(p.id) !== -1) return false; // déjà dans le squad
+      if (q) {
+        var name = ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase();
+        if (!name.includes(q)) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      // Joueurs habituels de l'équipe en premier
+      var aUsual = a.usual_team === teamCode;
+      var bUsual = b.usual_team === teamCode;
+      if (aUsual && !bUsual) return -1;
+      if (!aUsual && bUsual) return 1;
+      return (b.ranking || 0) - (a.ranking || 0);
+    });
+
+    var teamName = team ? (team.name || teamCode) : teamCode;
+    var h = '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:12px;overflow:hidden">';
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid ' + t.bord + '">';
+    h += '<button data-action="squad-picker-close" style="width:28px;height:28px;border-radius:6px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:16px;cursor:pointer">‹</button>';
+    h += '<span style="flex:1;font-size:13px;font-weight:700;color:' + t.ink + '">Ajouter à ' + esc(teamName) + '</span>';
+    h += '</div>';
+    h += '<div style="padding:8px 10px;border-bottom:1px solid ' + t.bord + '">';
+    h += '<input data-input="squad-picker-search" value="' + esc(S.squadPickerQ) + '" placeholder="Rechercher…" style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid ' + t.bord + ';border-radius:8px;background:' + t.surf2 + ';color:' + t.ink + ';font-size:13px;outline:none">';
+    h += '</div>';
+    h += '<div style="max-height:340px;overflow-y:auto">';
+    if (!available.length) {
+      h += '<div style="padding:20px;text-align:center;font-size:12px;color:' + t.ink2 + '">Aucun joueur disponible</div>';
+    }
+    available.forEach(function (p) {
+      var init  = initials((p.first_name || '') + ' ' + (p.last_name || ''));
+      var avail = getAvail(p.id);
+      var isUsual = p.usual_team === teamCode;
+      h += '<button data-action="squad-add" data-team="' + esc(teamCode) + '" data-player-id="' + p.id + '"';
+      h += ' style="display:flex;align-items:center;gap:10px;padding:8px 12px;width:100%;background:transparent;border:none;border-bottom:1px solid ' + t.bord + ';cursor:pointer;text-align:left">';
+      h += avatar(init, avail, dark, 32);
+      h += '<div style="flex:1;min-width:0">';
+      var pTeamObj2 = S.teams.find(function (tm) { return (tm.code || tm.id) === p.usual_team; });
+      var pTeamLbl2 = pTeamObj2 ? (pTeamObj2.name || p.usual_team) : p.usual_team;
+      h += '<div style="font-size:13px;font-weight:600;color:' + t.ink + '">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + (pTeamLbl2 ? ' <span style="font-size:10px;color:' + t.ink2 + ';font-weight:600">' + esc(pTeamLbl2) + '</span>' : '') + '</div>';
+      h += '<div style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + ' pts</div>';
+      h += '</div>';
+      h += '</button>';
+    });
+    h += '</div></div>';
+    return h;
+  }
+
+  // ═══════════════════════════════════════════
   // ALERTES
   // ═══════════════════════════════════════════
   function renderAlertes() {
@@ -1012,6 +1164,7 @@
         case 'journee':  screen = renderJournee(); break;
         case 'joueurs':  screen = renderJoueurs(); break;
         case 'player':   screen = renderPlayerDetail(); break;
+        case 'squads':   screen = renderSquads();  break;
         case 'alertes':  screen = renderAlertes(); break;
         case 'reglages': screen = renderReglages(); break;
         default:         screen = renderDashboard(); break;
@@ -1064,10 +1217,54 @@
     if (inp) inp.addEventListener('input', function (e) { S.searchQ = e.target.value; render(); });
     var pi = root.querySelector('[data-input="picker-search"]');
     if (pi) pi.addEventListener('input', function (e) { S.pickerQ = e.target.value; render(); });
+    var sp = root.querySelector('[data-input="squad-picker-search"]');
+    if (sp) sp.addEventListener('input', function (e) { S.squadPickerQ = e.target.value; render(); });
     var ep = root.querySelector('[data-input="edit-phone"]');
     if (ep) ep.addEventListener('input', function (e) { S.editPhone = e.target.value; });
     var en = root.querySelector('[data-input="edit-notes"]');
     if (en) en.addEventListener('input', function (e) { S.editNotes = e.target.value; });
+  }
+
+  function squadAdd(teamCode, playerId) {
+    var season = cfg.season || '';
+    var phase  = S.phase + 1;
+    // Optimiste
+    var next = S.squads.concat([{ team_code: teamCode, phase: phase, season: season, player_id: playerId, position: 999 }]);
+    setState({ squads: next, squadPickerTeam: null, squadPickerQ: '' });
+    apiFetch('/phase-squads', {
+      method: 'POST',
+      body: JSON.stringify({ season: season, phase: phase, team_code: teamCode, player_id: playerId })
+    }).then(function () { loadSquads(); }).catch(function () { loadSquads(); });
+  }
+
+  function squadRemove(teamCode, playerId) {
+    var season = cfg.season || '';
+    var phase  = S.phase + 1;
+    // Optimiste
+    var next = S.squads.filter(function (s) {
+      return !(s.team_code === teamCode && s.phase === phase && String(s.player_id) === String(playerId));
+    });
+    setState({ squads: next });
+    apiFetch('/phase-squads', {
+      method: 'DELETE',
+      body: JSON.stringify({ season: season, phase: phase, team_code: teamCode, player_id: playerId })
+    }).catch(function () { loadSquads(); });
+  }
+
+  function squadVentilate() {
+    setState({ squadLoading: true });
+    apiFetch('/phase-squads/ventilate', {
+      method: 'POST',
+      body: JSON.stringify({ season: cfg.season || '', phase: S.phase + 1, overwrite: false })
+    }).then(function (res) {
+      setState({ squadLoading: false });
+      loadCompositions();
+      loadAlerts();
+      alert('✅ ' + (res.message || 'Ventilation terminée'));
+    }).catch(function () {
+      setState({ squadLoading: false });
+      alert('❌ Erreur lors de la ventilation.');
+    });
   }
 
   function toggleAvailability(playerId, phase, round) {
@@ -1151,6 +1348,16 @@
       case 'slot-remove':  e.stopPropagation(); removeSlot(el.dataset.team, parseInt(el.dataset.slot)); break;
       case 'picker-close': setState({ picker: null, pickerQ: '' }); break;
       case 'picker-clear':      S.pickerQ = ''; render(); break;
+      case 'squad-picker-open':
+        setState({ squadPickerTeam: el.dataset.team, squadPickerQ: '' }); break;
+      case 'squad-picker-close':
+        setState({ squadPickerTeam: null, squadPickerQ: '' }); break;
+      case 'squad-add':
+        squadAdd(el.dataset.team, parseInt(el.dataset.playerId)); break;
+      case 'squad-remove':
+        squadRemove(el.dataset.team, parseInt(el.dataset.playerId)); break;
+      case 'squad-ventilate':
+        squadVentilate(); break;
       case 'avail-toggle':
         toggleAvailability(parseInt(el.dataset.playerId), parseInt(el.dataset.phase), parseInt(el.dataset.round));
         break;
@@ -1170,6 +1377,7 @@
     if (s.screen === 'journee')  return '#journee/' + s.journeeN;
     if (s.screen === 'player')   return '#joueur/'  + s.playerId;
     if (s.screen === 'joueurs')  return '#joueurs';
+    if (s.screen === 'squads')   return '#squads';
     if (s.screen === 'alertes')  return '#alertes';
     if (s.screen === 'reglages') return '#reglages';
     return '#';
@@ -1179,6 +1387,7 @@
     var h = (hash || '').replace(/^#\/?/, '');
     if (!h || h === 'dashboard') return { screen: 'dashboard', tab: 'dashboard' };
     if (h === 'joueurs')  return { screen: 'joueurs',  tab: 'joueurs' };
+    if (h === 'squads')   return { screen: 'squads',   tab: 'squads' };
     if (h === 'alertes')  return { screen: 'alertes',  tab: 'alertes' };
     if (h === 'reglages') return { screen: 'reglages', tab: 'reglages' };
     var m = h.match(/^journee\/(\d+)$/);
@@ -1194,9 +1403,10 @@
   }
 
   function goTab(id) {
-    var map = { dashboard: 'dashboard', journees: 'journee', joueurs: 'joueurs', alertes: 'alertes', reglages: 'reglages' };
-    setState({ tab: id, screen: map[id] || id });
+    var map = { dashboard: 'dashboard', journees: 'journee', joueurs: 'joueurs', squads: 'squads', alertes: 'alertes', reglages: 'reglages' };
+    setState({ tab: id, screen: map[id] || id, squadPickerTeam: null, squadPickerQ: '' });
     if (id === 'journees') { loadCompositions(); loadAlerts(); }
+    if (id === 'squads')   { loadSquads(); }
   }
 
   function goBack() {
