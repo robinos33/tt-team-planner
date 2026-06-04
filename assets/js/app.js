@@ -765,17 +765,9 @@
     h += '<a href="' + esc(smsHref(phone, p.first_name || '', S.journeeN, jDate)) + '" style="display:flex;align-items:center;justify-content:center;gap:6px;background:' + C.pri + ';color:white;padding:12px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600">💬 SMS</a>';
     h += '</div>';
 
-    // Availability grid — 7 rounds per phase
-    var avGridRows = S.journees.map(function (jx) {
-      var av = getAvailForRound(p.id, S.phase + 1, jx.n);
-      var bg = av === 'available' ? C.okSoft : av === 'unavailable' ? C.errSoft : av === 'uncertain' ? C.warnSoft : t.surf2;
-      var fg = av === 'available' ? '#15803d' : av === 'unavailable' ? '#b91c1c' : av === 'uncertain' ? '#a16207' : t.ink2;
-      return '<div style="padding:8px 0;border-radius:8px;background:' + bg + ';color:' + fg + ';text-align:center;font-size:11px;font-weight:600">' +
-        '<div>J' + jx.n + '</div><div style="font-size:12px;margin-top:1px">' + avEmoji(av) + '</div></div>';
-    }).join('');
-    h += sectionWrap('Disponibilités · Phase ' + (S.phase + 1),
-      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:8px">' + avGridRows + '</div>',
-      dark);
+    // Availability grids — both phases, interactive
+    h += renderAvailGrid(p, 1, dark, t);
+    h += renderAvailGrid(p, 2, dark, t);
 
     // Coordonnées
     h += sectionWrap('Coordonnées',
@@ -787,6 +779,58 @@
     h += sectionWrap('Notes internes',
       '<div style="padding:10px 12px;font-size:12px;color:' + (p.notes ? t.ink : t.ink2) + ';line-height:1.5;font-style:' + (p.notes ? 'normal' : 'italic') + '">' + esc(p.notes || 'Aucune note') + '</div>',
       dark);
+
+  function renderAvailGrid(p, phase, dark, t) {
+    var cells = S.journees.map(function (jx) {
+      var av  = getAvailForRound(p.id, phase, jx.n);
+      var bg  = av === 'available' ? C.okSoft : av === 'unavailable' ? C.errSoft : av === 'uncertain' ? C.warnSoft : t.surf2;
+      var fg  = av === 'available' ? '#15803d' : av === 'unavailable' ? '#b91c1c' : av === 'uncertain' ? '#a16207' : t.ink2;
+      var brd = av === 'unknown' ? '1px dashed ' + t.bord : '1px solid transparent';
+      return '<button data-action="avail-toggle" data-player-id="' + p.id + '" data-phase="' + phase + '" data-round="' + jx.n + '"' +
+        ' style="padding:7px 2px;border-radius:8px;background:' + bg + ';color:' + fg + ';text-align:center;font-size:11px;font-weight:600;border:' + brd + ';cursor:pointer;width:100%">' +
+        '<div>J' + jx.n + '</div><div style="font-size:13px;margin-top:2px">' + avEmoji(av) + '</div>' +
+      '</button>';
+    }).join('');
+    var hint = '<div style="font-size:10px;color:' + t.ink2 + ';padding:4px 8px 8px;text-align:right">Tap pour changer</div>';
+    return sectionWrap('Disponibilités · Phase ' + phase,
+      '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:8px">' + cells + '</div>' + hint,
+      dark);
+  }
+
+  function toggleAvailability(playerId, phase, round) {
+    var CYCLE = ['unknown', 'available', 'unavailable', 'uncertain'];
+    var cur = S.availabilities.find(function (a) {
+      return String(a.player_id) === String(playerId) && a.phase === phase && a.round === round;
+    });
+    var curStatus = cur ? cur.status : 'unknown';
+    var nextStatus = CYCLE[(CYCLE.indexOf(curStatus) + 1) % CYCLE.length];
+    var season = cfg.season || '';
+
+    // Optimistic update
+    var found = false;
+    var updated = S.availabilities.map(function (a) {
+      if (String(a.player_id) === String(playerId) && a.phase === phase && a.round === round) {
+        found = true;
+        return Object.assign({}, a, { status: nextStatus });
+      }
+      return a;
+    });
+    if (!found) updated.push({ player_id: playerId, season: season, phase: phase, round: round, status: nextStatus, comment: '' });
+    setState({ availabilities: updated });
+
+    apiFetch('/availability', {
+      method: 'POST',
+      body: JSON.stringify({ player_id: playerId, season: season, phase: phase, round: round, status: nextStatus, comment: '' })
+    }).catch(function () {
+      // Rollback on error
+      setState({ availabilities: S.availabilities.map(function (a) {
+        if (String(a.player_id) === String(playerId) && a.phase === phase && a.round === round) {
+          return Object.assign({}, a, { status: curStatus });
+        }
+        return a;
+      })});
+    });
+  }
 
   function renderPlayerEdit(p, dark, t) {
     var cancelBtn = '<button data-action="player-edit-cancel" style="padding:0 12px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:600;cursor:pointer">Annuler</button>';
@@ -1042,6 +1086,9 @@
       case 'slot-remove':  e.stopPropagation(); removeSlot(el.dataset.team, parseInt(el.dataset.slot)); break;
       case 'picker-close': setState({ picker: null, pickerQ: '' }); break;
       case 'picker-clear':      S.pickerQ = ''; render(); break;
+      case 'avail-toggle':
+        toggleAvailability(parseInt(el.dataset.playerId), parseInt(el.dataset.phase), parseInt(el.dataset.round));
+        break;
       case 'player-edit-open':
         var ep = getPlayer(S.playerId);
         if (ep) setState({ playerEdit: true, editPhone: ep.phone || '', editNotes: ep.notes || '', editSaving: false });
