@@ -178,6 +178,7 @@ class SettingsPage
 
         echo '<hr>';
         $this->renderSyncSection($datapingActive, $lastSync, $repo);
+        $this->renderSupportNotice();
         echo '</div>';
     }
 
@@ -422,6 +423,19 @@ class SettingsPage
         }
     }
 
+    private function renderSupportNotice(): void
+    {
+        $subject = rawurlencode('[TT Team Planner v' . TTP_VERSION . '] ');
+        $mailto  = 'mailto:robin.aldasoro@gmail.com?subject=' . $subject;
+
+        echo '<div style="margin-top:24px;padding:14px 16px;background:#f0f6ff;border-left:4px solid #2563eb;border-radius:0 6px 6px 0">';
+        echo '<strong style="font-size:13px">💬 ' . esc_html__('Support & suggestions', 'tt-team-planner') . '</strong>';
+        echo '<p style="margin:6px 0 0;font-size:13px;color:#374151">';
+        echo esc_html__('Un bug à signaler ou une nouvelle fonctionnalité à proposer ?', 'tt-team-planner') . ' ';
+        echo '<a href="' . esc_url($mailto) . '">' . esc_html__('Envoyer un e-mail', 'tt-team-planner') . '</a>.';
+        echo '</p>';
+        echo '</div>';
+    }
 
     private function renderMonClubTTBanner(bool $active): void
     {
