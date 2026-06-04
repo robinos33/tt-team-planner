@@ -36,8 +36,12 @@ class SettingsPage
             if (! is_array($team)) {
                 continue;
             }
+            $code = sanitize_text_field($team['code'] ?? '');
+            if ($code === '') {
+                continue; // Ignore les lignes sans code
+            }
             $result[] = [
-                'code'  => sanitize_text_field($team['code']  ?? ''),
+                'code'  => $code,
                 'name'  => sanitize_text_field($team['name']  ?? ''),
                 'level' => sanitize_text_field($team['level'] ?? ''),
                 'color' => sanitize_hex_color($team['color']  ?? '#2563eb') ?? '#2563eb',
@@ -166,6 +170,7 @@ class SettingsPage
 
         echo '</table>';
 
+        $this->renderTeamsSection();
         $this->renderDatesSection();
 
         submit_button(__('Enregistrer les reglages', 'tt-team-planner'));
@@ -179,6 +184,144 @@ class SettingsPage
     // =========================================================================
     // Sections privees
     // =========================================================================
+
+    private function renderTeamsSection(): void
+    {
+        $teams = (array) get_option('ttp_teams', []);
+
+        echo '<h2>' . esc_html__('Équipes', 'tt-team-planner') . '</h2>';
+        echo '<p class="description">' . esc_html__('Définissez les équipes du club. Le code est utilisé pour grouper les joueurs par équipe habituelle.', 'tt-team-planner') . '</p>';
+
+        echo '<datalist id="ttp-levels-list">';
+        foreach ([
+            'Pro A', 'Pro B',
+            'Nationale 1', 'Nationale 2', 'Nationale 3',
+            'Pré-Nationale',
+            'Régionale 1', 'Régionale 2', 'Régionale 3',
+            'Pré-Régionale',
+            'Départementale 1', 'Départementale 2', 'Départementale 3', 'Départementale 4', 'Départementale 5',
+        ] as $lvl) {
+            echo '<option value="' . esc_attr($lvl) . '">';
+        }
+        echo '</datalist>';
+
+        echo '<table id="ttp-teams-table" class="widefat" style="max-width:700px;margin-bottom:12px">';
+        echo '<thead><tr>';
+        echo '<th style="width:80px">' . esc_html__('Code', 'tt-team-planner') . '</th>';
+        echo '<th>' . esc_html__('Nom', 'tt-team-planner') . '</th>';
+        echo '<th style="width:140px">' . esc_html__('Niveau', 'tt-team-planner') . '</th>';
+        echo '<th style="width:60px">' . esc_html__('Couleur', 'tt-team-planner') . '</th>';
+        echo '<th style="width:36px"></th>';
+        echo '</tr></thead>';
+        echo '<tbody id="ttp-teams-body">';
+
+        foreach ($teams as $i => $team) {
+            $this->renderTeamRow((int) $i, $team);
+        }
+
+        echo '</tbody></table>';
+
+        echo '<button type="button" id="ttp-add-team" class="button">';
+        echo '+ ' . esc_html__('Ajouter une équipe', 'tt-team-planner');
+        echo '</button>';
+
+        // Template de ligne (caché) cloné par le JS
+        echo '<template id="ttp-team-row-tpl">';
+        echo '<tr class="ttp-team-row">';
+        echo '<td><input type="text" name="ttp_teams[__i__][code]" value="" placeholder="auto" class="small-text ttp-team-code" style="color:#6b7280;font-style:italic"></td>';
+        echo '<td><input type="text" name="ttp_teams[__i__][name]" value="" placeholder="Équipe 1" class="regular-text ttp-team-name" required></td>';
+        echo '<td><input type="text" name="ttp_teams[__i__][level]" value="" placeholder="Régionale 1" list="ttp-levels-list" class="regular-text ttp-team-level"></td>';
+        echo '<td><input type="color" name="ttp_teams[__i__][color]" value="#2563eb" style="width:44px;height:30px;padding:2px;cursor:pointer"></td>';
+        echo '<td><button type="button" class="button ttp-remove-team" title="' . esc_attr__('Supprimer', 'tt-team-planner') . '">✕</button></td>';
+        echo '</tr>';
+        echo '</template>';
+
+        echo '<script>
+        (function () {
+            var tbody  = document.getElementById("ttp-teams-body");
+            var addBtn = document.getElementById("ttp-add-team");
+            var tpl    = document.getElementById("ttp-team-row-tpl");
+
+            function autoCode(name) {
+                return (name.normalize("NFD").replace(/[̀-ͯ]/g, "")
+                    .match(/[A-Za-z]+|\d+/g) || [])
+                    .map(function (t) { return /^\d+$/.test(t) ? t : t[0].toUpperCase(); })
+                    .join("");
+            }
+
+            function reIndex() {
+                tbody.querySelectorAll("tr.ttp-team-row").forEach(function (row, i) {
+                    row.querySelectorAll("[name]").forEach(function (el) {
+                        el.name = el.name.replace(/\[\d+\]/, "[" + i + "]");
+                    });
+                });
+            }
+
+            function bindRow(row) {
+                var nameInput = row.querySelector(".ttp-team-name");
+                var codeInput = row.querySelector(".ttp-team-code");
+
+                // Auto-fill code from name unless manually overridden
+                nameInput.addEventListener("input", function () {
+                    if (codeInput.dataset.manual !== "1") {
+                        codeInput.value = autoCode(nameInput.value);
+                    }
+                });
+                codeInput.addEventListener("input", function () {
+                    codeInput.dataset.manual = codeInput.value ? "1" : "0";
+                });
+                codeInput.addEventListener("blur", function () {
+                    // Sync back if user cleared the code field
+                    if (!codeInput.value) {
+                        codeInput.dataset.manual = "0";
+                        codeInput.value = autoCode(nameInput.value);
+                    }
+                });
+
+                row.querySelector(".ttp-remove-team").addEventListener("click", function () {
+                    row.remove();
+                    reIndex();
+                });
+            }
+
+            tbody.querySelectorAll("tr.ttp-team-row").forEach(function (row) {
+                // Existing rows: code already set, mark as manual
+                var codeInput = row.querySelector(".ttp-team-code");
+                if (codeInput.value) codeInput.dataset.manual = "1";
+                bindRow(row);
+            });
+
+            addBtn.addEventListener("click", function () {
+                var count = tbody.querySelectorAll("tr.ttp-team-row").length;
+                var frag  = tpl.content.cloneNode(true);
+                var row   = frag.querySelector("tr");
+                row.querySelectorAll("[name]").forEach(function (el) {
+                    el.name = el.name.replace("__i__", count);
+                });
+                tbody.appendChild(frag);
+                row = tbody.querySelector("tr.ttp-team-row:last-child");
+                bindRow(row);
+                row.querySelector(".ttp-team-name").focus();
+            });
+        })();
+        </script>';
+    }
+
+    private function renderTeamRow(int $i, array $team): void
+    {
+        $code  = esc_attr($team['code']  ?? '');
+        $name  = esc_attr($team['name']  ?? '');
+        $level = esc_attr($team['level'] ?? '');
+        $color = esc_attr($team['color'] ?? '#2563eb');
+
+        echo '<tr class="ttp-team-row">';
+        echo '<td><input type="text" name="ttp_teams[' . $i . '][code]" value="' . $code . '" placeholder="auto" class="small-text ttp-team-code"></td>';
+        echo '<td><input type="text" name="ttp_teams[' . $i . '][name]" value="' . $name . '" placeholder="Équipe 1" class="regular-text ttp-team-name" required></td>';
+        echo '<td><input type="text" name="ttp_teams[' . $i . '][level]" value="' . $level . '" placeholder="Régionale 1" list="ttp-levels-list" class="regular-text ttp-team-level"></td>';
+        echo '<td><input type="color" name="ttp_teams[' . $i . '][color]" value="' . $color . '" style="width:44px;height:30px;padding:2px;cursor:pointer"></td>';
+        echo '<td><button type="button" class="button ttp-remove-team" title="' . esc_attr__('Supprimer', 'tt-team-planner') . '">✕</button></td>';
+        echo '</tr>';
+    }
 
     private function renderDatesSection(): void
     {
@@ -278,6 +421,7 @@ class SettingsPage
             echo '</form>';
         }
     }
+
 
     private function renderMonClubTTBanner(bool $active): void
     {
