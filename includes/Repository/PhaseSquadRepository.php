@@ -27,10 +27,10 @@ class PhaseSquadRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY team_code, position ASC",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY team_code, position ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
                 $phase
             ),
@@ -52,10 +52,10 @@ class PhaseSquadRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND team_code = %s ORDER BY position ASC",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND team_code = %s ORDER BY position ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
                 $phase,
                 $teamCode
@@ -75,7 +75,7 @@ class PhaseSquadRepository
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $maxPos = (int) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COALESCE(MAX(position), 0) FROM {$this->table} WHERE season = %s AND phase = %d AND team_code = %s",
+                "SELECT COALESCE(MAX(position), 0) FROM {$this->table} WHERE season = %s AND phase = %d AND team_code = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
                 $phase,
                 $teamCode
@@ -128,7 +128,7 @@ class PhaseSquadRepository
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $result = (bool) $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$this->table} WHERE season = %s AND phase = %d AND player_id = %d",
+                "SELECT COUNT(*) FROM {$this->table} WHERE season = %s AND phase = %d AND player_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
                 $phase,
                 $playerId

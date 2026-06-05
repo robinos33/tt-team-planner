@@ -27,10 +27,10 @@ class TeamCompositionRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND round = %d ORDER BY team_code, slot_number",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND round = %d ORDER BY team_code, slot_number", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season, $phase, $round
             ),
             ARRAY_A
@@ -51,10 +51,10 @@ class TeamCompositionRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY round, team_code, slot_number",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY round, team_code, slot_number", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season, $phase
             ),
             ARRAY_A
@@ -75,10 +75,10 @@ class TeamCompositionRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND round = %d AND team_code = %s ORDER BY slot_number",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND round = %d AND team_code = %s ORDER BY slot_number", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season, $phase, $round, $teamCode
             ),
             ARRAY_A
@@ -97,7 +97,7 @@ class TeamCompositionRepository
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query($wpdb->prepare(
-            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id)
+            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
              VALUES (%s, %d, %d, %s, %d, %d)
              ON DUPLICATE KEY UPDATE player_id = VALUES(player_id), updated_at = NOW()",
             $season, $phase, $round, $teamCode, $slot, $playerId
@@ -111,7 +111,7 @@ class TeamCompositionRepository
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query($wpdb->prepare(
-            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id)
+            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
              VALUES (%s, %d, %d, %s, %d, NULL)
              ON DUPLICATE KEY UPDATE player_id = NULL, updated_at = NOW()",
             $season, $phase, $round, $teamCode, $slot
@@ -123,7 +123,7 @@ class TeamCompositionRepository
     public function clearTeam(string $season, int $phase, int $round, string $teamCode): void
     {
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->update(
             $this->table,
             ['player_id' => null],
@@ -136,7 +136,7 @@ class TeamCompositionRepository
     private function clearPlayerFromRound(string $season, int $phase, int $round, int $playerId): void
     {
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->update(
             $this->table,
             ['player_id' => null],

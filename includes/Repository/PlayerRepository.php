@@ -26,8 +26,8 @@ class PlayerRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $rows   = $wpdb->get_results("SELECT * FROM {$this->table} ORDER BY ranking DESC", ARRAY_A);
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $rows   = $wpdb->get_results("SELECT * FROM {$this->table} ORDER BY ranking DESC", ARRAY_A); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
         $result = array_map([Player::class, 'fromRow'], $rows ?: []);
 
         wp_cache_set('all', $result, self::CACHE_GROUP);
@@ -43,9 +43,9 @@ class PlayerRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$this->table} WHERE id = %d", $id),
+            $wpdb->prepare("SELECT * FROM {$this->table} WHERE id = %d", $id), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix, not user input
             ARRAY_A
         );
         $player = $row ? Player::fromRow($row) : null;
@@ -64,9 +64,9 @@ class PlayerRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM {$this->table} WHERE usual_team = %s ORDER BY ranking DESC", $teamCode),
+            $wpdb->prepare("SELECT * FROM {$this->table} WHERE usual_team = %s ORDER BY ranking DESC", $teamCode), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix, not user input
             ARRAY_A
         );
         $result = array_map([Player::class, 'fromRow'], $rows ?: []);
@@ -88,7 +88,7 @@ class PlayerRepository
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $existing = $wpdb->get_var(
-            $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $externalId)
+            $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $externalId) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix, not user input
         );
 
         $ffttFields = [
@@ -104,13 +104,13 @@ class PlayerRepository
         ];
 
         if ($existing) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->update($this->table, $ffttFields, ['id' => (int) $existing]);
             $this->invalidateCache();
             return (int) $existing;
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->insert($this->table, array_merge($ffttFields, [
             'phone'       => '',
             'usual_team'  => '',
@@ -133,7 +133,7 @@ class PlayerRepository
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $existing = $wpdb->get_var(
-            $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $data['external_id'] ?? '')
+            $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $data['external_id'] ?? '') // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix, not user input
         );
 
         $row = [
@@ -155,13 +155,13 @@ class PlayerRepository
         ];
 
         if ($existing) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->update($this->table, $row, ['id' => (int) $existing]);
             $this->invalidateCache();
             return (int) $existing;
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $wpdb->insert($this->table, $row);
         $this->invalidateCache();
         return $wpdb->insert_id;
@@ -188,9 +188,16 @@ class PlayerRepository
 
     public function count(): int
     {
+        $cached = wp_cache_get('count', self::CACHE_GROUP);
+        if ($cached !== false) {
+            return (int) $cached;
+        }
+
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table}");
+        $count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table}"); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        wp_cache_set('count', $count, self::CACHE_GROUP);
+        return $count;
     }
 
     private function invalidateCache(?int $id = null): void

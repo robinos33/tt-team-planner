@@ -27,10 +27,10 @@ class AvailabilityRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND round = %d",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND round = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season, $phase, $round
             ),
             ARRAY_A
@@ -51,10 +51,10 @@ class AvailabilityRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE player_id = %d AND season = %s ORDER BY phase, round",
+                "SELECT * FROM {$this->table} WHERE player_id = %d AND season = %s ORDER BY phase, round", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $playerId, $season
             ),
             ARRAY_A
@@ -75,10 +75,10 @@ class AvailabilityRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s ORDER BY player_id, phase, round",
+                "SELECT * FROM {$this->table} WHERE season = %s ORDER BY player_id, phase, round", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season
             ),
             ARRAY_A
@@ -99,10 +99,10 @@ class AvailabilityRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
         $rows   = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY player_id, round",
+                "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY player_id, round", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season, $phase
             ),
             ARRAY_A
@@ -119,7 +119,7 @@ class AvailabilityRepository
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $wpdb->query($wpdb->prepare(
-            "INSERT INTO {$this->table} (player_id, season, phase, round, status, comment)
+            "INSERT INTO {$this->table} (player_id, season, phase, round, status, comment) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
              VALUES (%d, %s, %d, %d, %s, %s)
              ON DUPLICATE KEY UPDATE status = VALUES(status), comment = VALUES(comment), updated_at = NOW()",
             $playerId, $season, $phase, $round, $status, $comment

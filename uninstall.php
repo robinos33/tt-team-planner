@@ -17,7 +17,7 @@ $ttp_tables = [
 ];
 
 foreach ($ttp_tables as $ttp_table) {
-    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DROP TABLE on uninstall, no caching applicable
     $wpdb->query( "DROP TABLE IF EXISTS `{$ttp_table}`" );
 }
 
