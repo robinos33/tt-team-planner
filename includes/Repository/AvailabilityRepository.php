@@ -113,10 +113,10 @@ class AvailabilityRepository
     {
         global $wpdb;
 
-        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            "INSERT INTO {$this->table} (player_id, season, phase, round, status, comment)
-             VALUES (%d, %s, %d, %d, %s, %s)
-             ON DUPLICATE KEY UPDATE status = VALUES(status), comment = VALUES(comment), updated_at = NOW()",
+        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            "INSERT INTO {$this->table} (player_id, season, phase, round, status, comment)" . // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            " VALUES (%d, %s, %d, %d, %s, %s)" .
+            " ON DUPLICATE KEY UPDATE status = VALUES(status), comment = VALUES(comment), updated_at = NOW()",
             $playerId, $season, $phase, $round, $status, $comment
         ));
 

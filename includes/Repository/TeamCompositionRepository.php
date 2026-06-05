@@ -92,10 +92,10 @@ class TeamCompositionRepository
 
         $this->clearPlayerFromRound($season, $phase, $round, $playerId);
 
-        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id)
-             VALUES (%s, %d, %d, %s, %d, %d)
-             ON DUPLICATE KEY UPDATE player_id = VALUES(player_id), updated_at = NOW()",
+        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id)" . // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            " VALUES (%s, %d, %d, %s, %d, %d)" .
+            " ON DUPLICATE KEY UPDATE player_id = VALUES(player_id), updated_at = NOW()",
             $season, $phase, $round, $teamCode, $slot, $playerId
         ));
 
@@ -105,10 +105,10 @@ class TeamCompositionRepository
     public function clearSlot(string $season, int $phase, int $round, string $teamCode, int $slot): void
     {
         global $wpdb;
-        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id)
-             VALUES (%s, %d, %d, %s, %d, NULL)
-             ON DUPLICATE KEY UPDATE player_id = NULL, updated_at = NOW()",
+        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            "INSERT INTO {$this->table} (season, phase, round, team_code, slot_number, player_id)" . // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            " VALUES (%s, %d, %d, %s, %d, NULL)" .
+            " ON DUPLICATE KEY UPDATE player_id = NULL, updated_at = NOW()",
             $season, $phase, $round, $teamCode, $slot
         ));
 
