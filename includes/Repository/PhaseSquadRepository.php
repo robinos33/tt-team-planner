@@ -27,8 +27,7 @@ class PhaseSquadRepository
         }
 
         global $wpdb;
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $rows   = $wpdb->get_results(
+        $rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             $wpdb->prepare(
                 "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d ORDER BY team_code, position ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
@@ -52,8 +51,7 @@ class PhaseSquadRepository
         }
 
         global $wpdb;
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $rows   = $wpdb->get_results(
+        $rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             $wpdb->prepare(
                 "SELECT * FROM {$this->table} WHERE season = %s AND phase = %d AND team_code = %s ORDER BY position ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
@@ -72,8 +70,7 @@ class PhaseSquadRepository
     {
         global $wpdb;
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $maxPos = (int) $wpdb->get_var(
+        $maxPos = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->prepare(
                 "SELECT COALESCE(MAX(position), 0) FROM {$this->table} WHERE season = %s AND phase = %d AND team_code = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,
@@ -82,8 +79,7 @@ class PhaseSquadRepository
             )
         );
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $result = $wpdb->insert($this->table, [
+        $result = $wpdb->insert($this->table, [ // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
             'season'    => $season,
             'phase'     => $phase,
             'team_code' => $teamCode,
@@ -101,8 +97,7 @@ class PhaseSquadRepository
     public function remove(string $season, int $phase, string $teamCode, int $playerId): bool
     {
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $ok = (bool) $wpdb->delete($this->table, [
+        $ok = (bool) $wpdb->delete($this->table, [ // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             'season'    => $season,
             'phase'     => $phase,
             'team_code' => $teamCode,
@@ -125,8 +120,7 @@ class PhaseSquadRepository
         }
 
         global $wpdb;
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $result = (bool) $wpdb->get_var(
+        $result = (bool) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $wpdb->prepare(
                 "SELECT COUNT(*) FROM {$this->table} WHERE season = %s AND phase = %d AND player_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix in constructor, not user input
                 $season,

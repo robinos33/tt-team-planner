@@ -47,16 +47,14 @@ class SeasonController
         $season = Assets::computeSeason();
 
         // Suppression des compositions
-        $deleted_compos = $wpdb->delete(
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $deleted_compos = $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->prefix . 'tttp_team_compositions',
             ['season' => $season, 'phase' => $phase],
             ['%s', '%d']
         );
 
         // Suppression des disponibilités
-        $deleted_avail = $wpdb->delete(
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $deleted_avail = $wpdb->delete( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $wpdb->prefix . 'tttp_availabilities',
             ['season' => $season, 'phase' => $phase],
             ['%s', '%d']
