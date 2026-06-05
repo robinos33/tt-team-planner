@@ -26,7 +26,7 @@ class PlayerRepository
         }
 
         global $wpdb;
-        $rows   = $wpdb->get_results("SELECT * FROM {$this->table} ORDER BY ranking DESC", ARRAY_A); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $rows   = $wpdb->get_results("SELECT * FROM {$this->table} ORDER BY ranking DESC", ARRAY_A); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         $result = array_map([Player::class, 'fromRow'], $rows ?: []);
 
         wp_cache_set('all', $result, self::CACHE_GROUP);
@@ -42,9 +42,8 @@ class PlayerRepository
         }
 
         global $wpdb;
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $row = $wpdb->get_row(
-            $wpdb->prepare("SELECT * FROM {$this->table} WHERE id = %d", $id), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix, not user input
+        $row = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->prepare("SELECT * FROM {$this->table} WHERE id = %d", $id), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             ARRAY_A
         );
         $player = $row ? Player::fromRow($row) : null;
@@ -63,9 +62,8 @@ class PlayerRepository
         }
 
         global $wpdb;
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $rows   = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM {$this->table} WHERE usual_team = %s ORDER BY ranking DESC", $teamCode), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name from $wpdb->prefix, not user input
+        $rows   = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->prepare("SELECT * FROM {$this->table} WHERE usual_team = %s ORDER BY ranking DESC", $teamCode), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             ARRAY_A
         );
         $result = array_map([Player::class, 'fromRow'], $rows ?: []);
@@ -102,14 +100,12 @@ class PlayerRepository
         ];
 
         if ($existing) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->update($this->table, $ffttFields, ['id' => (int) $existing]);
+            $wpdb->update($this->table, $ffttFields, ['id' => (int) $existing]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $this->invalidateCache();
             return (int) $existing;
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->insert($this->table, array_merge($ffttFields, [
+        $wpdb->insert($this->table, array_merge($ffttFields, [ // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             'phone'       => '',
             'usual_team'  => '',
             'is_captain'  => 0,
@@ -152,14 +148,12 @@ class PlayerRepository
         ];
 
         if ($existing) {
-            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->update($this->table, $row, ['id' => (int) $existing]);
+            $wpdb->update($this->table, $row, ['id' => (int) $existing]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $this->invalidateCache();
             return (int) $existing;
         }
 
-        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-        $wpdb->insert($this->table, $row);
+        $wpdb->insert($this->table, $row); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $this->invalidateCache();
         return $wpdb->insert_id;
     }
