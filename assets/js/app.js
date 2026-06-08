@@ -57,6 +57,7 @@
     searchQ: '', playerFilter: 'all',
     playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
     squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
+    burnage: {}, validations: {},
     teams: cfg.teams || [],
     journees: buildJournees(cfg.phase || 0)
   };
@@ -191,8 +192,75 @@
   function loadCompositions() {
     apiFetch('/compositions?season=' + encodeURIComponent(cfg.season || '') +
              '&phase=' + (S.phase + 1) + '&round=' + S.journeeN)
-      .then(function (c) { setState({ compositions: c || [] }); })
+      .then(function (c) {
+        setState({ compositions: c || [] });
+        loadBurnageContext(currentTeamCode(), S.journeeN);
+      })
       .catch(function () {});
+  }
+
+  // ── Brûlage : statut de validation + statut de brûlage par joueur ──
+  function currentTeamCode() {
+    var team = S.teams[S.activeTeamI];
+    return team ? (team.code || team.id || '') : '';
+  }
+
+  function burnageKey(teamCode, round) {
+    return teamCode + '_r' + round;
+  }
+
+  function loadBurnageContext(teamCode, round) {
+    if (!teamCode || !round) return;
+    var key = burnageKey(teamCode, round);
+
+    if (S.validations[key] === undefined) {
+      apiFetch('/appearances/validate?season=' + encodeURIComponent(cfg.season || '') +
+               '&phase=' + (S.phase + 1) + '&round=' + round + '&team_code=' + encodeURIComponent(teamCode))
+        .then(function (res) {
+          var v = Object.assign({}, S.validations);
+          v[key] = !!(res && res.validated);
+          setState({ validations: v });
+        })
+        .catch(function () {});
+    }
+
+    if (!S.burnage[key] && S.players.length) {
+      var ids = S.players.map(function (p) { return p.id; }).join(',');
+      apiFetch('/burnage?season=' + encodeURIComponent(cfg.season || '') +
+               '&phase=' + (S.phase + 1) + '&round=' + round + '&team_code=' + encodeURIComponent(teamCode) +
+               '&player_ids=' + ids)
+        .then(function (res) {
+          var b = Object.assign({}, S.burnage);
+          b[key] = res || {};
+          setState({ burnage: b });
+        })
+        .catch(function () {});
+    }
+  }
+
+  function validateTeamRound(teamCode, round) {
+    apiFetch('/appearances/validate', {
+      method: 'POST',
+      body: JSON.stringify({ season: cfg.season || '', phase: S.phase + 1, round: round, team_code: teamCode })
+    }).then(function () {
+      var key = burnageKey(teamCode, round);
+      var v = Object.assign({}, S.validations); v[key] = true;
+      var b = Object.assign({}, S.burnage); delete b[key];
+      setState({ validations: v, burnage: b });
+    }).catch(function (err) { alert('Erreur : ' + err.message); });
+  }
+
+  function unvalidateTeamRound(teamCode, round) {
+    if (!confirm('Annuler la validation de cette composition ? Cela peut modifier le statut de brûlage des journées suivantes.')) return;
+    apiFetch('/appearances/validate', {
+      method: 'DELETE',
+      body: JSON.stringify({ season: cfg.season || '', phase: S.phase + 1, round: round, team_code: teamCode })
+    }).then(function () {
+      var key = burnageKey(teamCode, round);
+      var v = Object.assign({}, S.validations); v[key] = false;
+      var b = Object.assign({}, S.burnage); delete b[key];
+      setState({ validations: v, burnage: b });
+    }).catch(function (err) { alert('Erreur : ' + err.message); });
   }
 
   function assignSlot(teamCode, slotNum, playerId) {
@@ -316,13 +384,16 @@
     return '<span style="display:inline-flex;align-items:center;gap:4px;background:' + p.bg + ';color:' + p.fg + ';font-size:' + sz + ';font-weight:600;padding:' + pad + ';border-radius:999px;line-height:1.2;white-space:nowrap">' + esc(text) + '</span>';
   }
 
-  function playerBadges(p, dark) {
+  function playerBadges(p, dark, burnStatus) {
     var h = '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">';
     if (p.is_captain) h += badge('© Cap.', 'primary', dark, true);
     if (p.is_foreign) h += badge('E', 'purple', dark, true);
     if (p.is_young)   h += badge('Jeune', 'ok', dark, true);
     if (p.is_mutation)h += badge('Mut.', 'warn', dark, true);
     if (p.is_burned)  h += badge('🔥 Brûlé', 'danger', dark, true);
+    if (burnStatus && burnStatus.burned) {
+      h += badge(burnStatus.reason === 'rule3' ? '⚠ Limite J2' : '🔥 Brûlé', 'danger', dark, true);
+    }
     h += '</div>';
     return h;
   }
@@ -511,28 +582,40 @@
   function renderTeamCompo(team, dark) {
     var t = tk(dark);
     var tc = team.color || C.pri;
-    var slots = getCompoSlots(team.code || team.id || '');
+    var tcode = team.code || team.id || '';
+    var round = S.journeeN;
+    var slots = getCompoSlots(tcode);
     var arr = [null, null, null, null];
     slots.forEach(function (s) { if (s.slot_number >= 1 && s.slot_number <= 4) arr[s.slot_number - 1] = s; });
     var filled = arr.filter(function (s) { return s && s.player_id; }).length;
+
+    var bKey      = burnageKey(tcode, round);
+    var burnMap   = S.burnage[bKey] || {};
+    var validated = !!S.validations[bKey];
 
     var h = '<div style="padding:12px">';
     // Team header
     h += '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-left:4px solid ' + tc + ';border-radius:10px;padding:12px;margin-bottom:10px">' +
       '<div style="display:flex;align-items:center;gap:8px">' +
         '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">' + esc(team.name || team.id || 'Équipe') + '</div><div style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level || '') + '</div></div>' +
+        (validated ? badge('✓ Journée validée', 'ok', dark, true) : '') +
         badge(filled + '/4', filled === 4 ? 'ok' : 'warn', dark) +
-      '</div>' +
-    '</div>';
+      '</div>';
+    if (validated) {
+      h += '<button data-action="round-unvalidate" data-team="' + esc(tcode) + '" data-round="' + round + '" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:transparent;border:1px solid ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer">Annuler la validation</button>';
+    } else if (filled === 4) {
+      h += '<button data-action="round-validate" data-team="' + esc(tcode) + '" data-round="' + round + '" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:' + C.pri + ';border:none;color:white;font-size:12px;font-weight:600;cursor:pointer">✓ Valider cette composition (rencontre jouée)</button>';
+    }
+    h += '</div>';
 
     // Slots
     h += '<div style="font-size:10px;color:' + t.ink2 + ';font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding:0 2px">4 slots joueurs</div>';
     h += '<div style="display:flex;flex-direction:column;gap:8px">';
     arr.forEach(function (slot, i) {
       var num = i + 1;
-      var tcode = esc(team.code || team.id || '');
+      var tcodeAttr = esc(tcode);
       if (!slot || !slot.player_id) {
-        h += '<button data-action="slot-open" data-team="' + tcode + '" data-slot="' + num + '" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px;background:transparent;border:1px dashed ' + t.bord + ';border-radius:10px;cursor:pointer;text-align:left;min-height:56px">' +
+        h += '<button data-action="slot-open" data-team="' + tcodeAttr + '" data-slot="' + num + '" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px;background:transparent;border:1px dashed ' + t.bord + ';border-radius:10px;cursor:pointer;text-align:left;min-height:56px">' +
           '<div style="width:22px;height:22px;border-radius:6px;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">' + num + '</div>' +
           '<div style="flex:1;font-size:13px;color:' + t.ink2 + ';font-weight:500">Slot vide<div style="font-size:11px;opacity:0.7;margin-top:2px">Toucher pour ajouter</div></div>' +
           '<span style="color:' + C.pri + ';font-size:18px;font-weight:600">+</span>' +
@@ -541,7 +624,8 @@
         var p = getPlayer(slot.player_id);
         if (!p) { h += '<div style="padding:10px;background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;font-size:12px;color:' + t.ink2 + '">Joueur introuvable</div>'; return; }
         var avail = getAvail(p.id);
-        var danger = avail === 'unavailable' || p.is_burned;
+        var burnStatus = burnMap[p.id];
+        var danger = avail === 'unavailable' || p.is_burned || (burnStatus && burnStatus.burned);
         var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
         h += '<div style="display:flex;align-items:center;background:' + t.surf + ';border:1px solid ' + (danger ? C.err : t.bord) + ';border-radius:10px;overflow:hidden">' +
           '<button data-action="player" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;padding:10px;background:transparent;border:none;cursor:pointer;text-align:left;min-width:0">' +
@@ -554,10 +638,10 @@
                 '<span style="font-size:11px;color:' + t.ink2 + '">·</span>' +
                 '<span style="font-size:11px;color:' + avColor(avail, dark) + '">' + avEmoji(avail) + ' ' + avStatus(avail) + '</span>' +
               '</div>' +
-              playerBadges(p, dark) +
+              playerBadges(p, dark, burnStatus) +
             '</div>' +
           '</button>' +
-          '<button data-action="slot-remove" data-team="' + tcode + '" data-slot="' + num + '" style="width:40px;height:100%;min-height:56px;border:none;border-left:1px solid ' + t.bord + ';background:transparent;color:' + t.ink2 + ';font-size:15px;cursor:pointer;flex-shrink:0" title="Retirer">✕</button>' +
+          '<button data-action="slot-remove" data-team="' + tcodeAttr + '" data-slot="' + num + '" style="width:40px;height:100%;min-height:56px;border:none;border-left:1px solid ' + t.bord + ';background:transparent;color:' + t.ink2 + ';font-size:15px;cursor:pointer;flex-shrink:0" title="Retirer">✕</button>' +
         '</div>';
       }
     });
@@ -650,6 +734,7 @@
         var init   = initials((p.first_name || '') + ' ' + (p.last_name || ''));
         var busy   = !!elsewhere[p.id];   // placé ailleurs — déconseillé mais autorisé
         var taken  = !!inTeam[p.id];      // déjà dans ce slot ou autre slot de l'équipe
+        var burnStatus = (S.burnage[burnageKey(teamCode, S.journeeN)] || {})[p.id];
         var grad   = avail === 'unavailable' ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,' + C.pri + ',' + C.priInk + ')';
 
         h += '<button data-action="slot-assign" data-player-id="' + p.id + '"'
@@ -669,7 +754,7 @@
         h += '<span style="font-size:11px;color:' + t.ink2 + '">' + (p.ranking || 0) + '</span>';
         if (squadIds.indexOf(p.id) !== -1) h += badge('📋 ' + teamName, 'primary', dark, true);
         if (busy) h += badge('Déjà en ' + elsewhere[p.id], 'warn', dark, true);
-        h += '</div>' + playerBadges(p, dark) + '</div>';
+        h += '</div>' + playerBadges(p, dark, burnStatus) + '</div>';
 
         h += (taken ? '' : '<span style="color:' + t.ink2 + ';font-size:18px;opacity:0.4">›</span>');
         h += '</button>';
@@ -1276,13 +1361,18 @@
       case 'back':         goBack(); break;
       case 'goto':         setState({ screen: el.dataset.screen, tab: el.dataset.tab || el.dataset.screen }); break;
       case 'phase':        var newPhase = parseInt(v); setState({ phase: newPhase, journees: buildJournees(newPhase) }); break;
-      case 'team-tab':     setState({ activeTeamI: parseInt(v) }); break;
+      case 'team-tab':
+        setState({ activeTeamI: parseInt(v) });
+        loadBurnageContext(currentTeamCode(), S.journeeN);
+        break;
       case 'filter':       setState({ playerFilter: v }); break;
       case 'toggle-dark':  setState({ dark: !S.dark }); break;
       case 'sync':         syncPlayers(); break;
       case 'slot-open':    setState({ picker: { teamCode: el.dataset.team, slotNum: parseInt(el.dataset.slot) }, pickerQ: '' }); break;
       case 'slot-assign':  if (S.picker) assignSlot(S.picker.teamCode, S.picker.slotNum, parseInt(el.dataset.playerId)); break;
       case 'slot-remove':  e.stopPropagation(); removeSlot(el.dataset.team, parseInt(el.dataset.slot)); break;
+      case 'round-validate':   validateTeamRound(el.dataset.team, parseInt(el.dataset.round)); break;
+      case 'round-unvalidate': unvalidateTeamRound(el.dataset.team, parseInt(el.dataset.round)); break;
       case 'picker-close': setState({ picker: null, pickerQ: '' }); break;
       case 'picker-clear':      S.pickerQ = ''; render(); break;
       case 'squad-picker-open':
