@@ -99,6 +99,35 @@ class Activator
             KEY player_season (player_id, season, phase, round)
         ) $charset;";
 
+        $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_match_appearances (
+            id           bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            season       varchar(20)         NOT NULL DEFAULT '',
+            phase        tinyint(1)          NOT NULL DEFAULT 1,
+            round        tinyint(2)          NOT NULL DEFAULT 1,
+            team_code    varchar(20)         NOT NULL DEFAULT '',
+            team_rank    smallint(5)         NOT NULL DEFAULT 0,
+            player_id    bigint(20) UNSIGNED NOT NULL,
+            slot_number  tinyint(1)          NOT NULL DEFAULT 1,
+            validated_at datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            validated_by bigint(20) UNSIGNED          DEFAULT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY season_phase_round_team_player (season, phase, round, team_code, player_id),
+            KEY player_phase (player_id, season, phase),
+            KEY season_phase_round (season, phase, round)
+        ) $charset;";
+
+        $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_validated_rounds (
+            id           bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            season       varchar(20)         NOT NULL DEFAULT '',
+            phase        tinyint(1)          NOT NULL DEFAULT 1,
+            round        tinyint(2)          NOT NULL DEFAULT 1,
+            team_code    varchar(20)         NOT NULL DEFAULT '',
+            validated_at datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            validated_by bigint(20) UNSIGNED          DEFAULT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY season_phase_round_team (season, phase, round, team_code)
+        ) $charset;";
+
         $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_phase_squads (
             id         bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             season     varchar(20)         NOT NULL DEFAULT '',
