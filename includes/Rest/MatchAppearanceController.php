@@ -17,6 +17,12 @@ class MatchAppearanceController
     public function registerRoutes(): void
     {
         register_rest_route(self::NS, '/appearances/validate', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'getValidationStatus'],
+            'permission_callback' => [$this, 'canRead'],
+        ]);
+
+        register_rest_route(self::NS, '/appearances/validate', [
             'methods'             => 'POST',
             'callback'            => [$this, 'validateRound'],
             'permission_callback' => [$this, 'canWrite'],
@@ -33,6 +39,22 @@ class MatchAppearanceController
             'callback'            => [$this, 'getBurnageStatus'],
             'permission_callback' => [$this, 'canRead'],
         ]);
+    }
+
+    public function getValidationStatus(WP_REST_Request $request): WP_REST_Response
+    {
+        $season   = sanitize_text_field($request->get_param('season') ?? get_option('ttp_active_season', ''));
+        $phase    = (int) ($request->get_param('phase') ?? get_option('ttp_active_phase', 1));
+        $round    = (int) $request->get_param('round');
+        $teamCode = sanitize_text_field($request->get_param('team_code') ?? '');
+
+        if (! $season || ! $round || ! $teamCode) {
+            return new WP_REST_Response(['validated' => false], 200);
+        }
+
+        $validated = (new ValidatedRoundRepository())->isValidated($season, $phase, $round, $teamCode);
+
+        return new WP_REST_Response(['validated' => $validated], 200);
     }
 
     public function validateRound(WP_REST_Request $request): WP_REST_Response
