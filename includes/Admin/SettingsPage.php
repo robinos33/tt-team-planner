@@ -142,13 +142,12 @@ class SettingsPage
         echo '<td><input type="text" id="ttp_club_name" name="ttp_club_name" value="' . esc_attr(get_option('ttp_club_name', '')) . '" class="regular-text"></td>';
         echo '</tr>';
 
-        // Saison + phase détectées automatiquement — lecture seule
+        // Saison détectée automatiquement — lecture seule
         $detectedSeason = \TT\TeamPlanner\Front\Assets::computeSeason();
-        $detectedPhase  = \TT\TeamPlanner\Front\Assets::detectPhase();
         echo '<tr>';
-        echo '<th scope="row">' . esc_html__('Saison / Phase (auto)', 'tt-team-planner') . '</th>';
-        echo '<td><code>' . esc_html($detectedSeason) . '</code> &nbsp; Phase <code>' . esc_html((string) $detectedPhase) . '</code>';
-        echo ' <span class="description">' . esc_html__('Calculees depuis la date du jour et les dates des journees.', 'tt-team-planner') . '</span></td>';
+        echo '<th scope="row">' . esc_html__('Saison (auto)', 'tt-team-planner') . '</th>';
+        echo '<td><code>' . esc_html($detectedSeason) . '</code>';
+        echo ' <span class="description">' . esc_html__('Calculee depuis la date du jour.', 'tt-team-planner') . '</span></td>';
         echo '</tr>';
 
         echo '</table>';
