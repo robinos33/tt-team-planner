@@ -546,8 +546,7 @@
     var tc = cfg.teamsCount || S.teams.length || 11;
     var teams = S.teams;
 
-    var publish = '<button style="background:' + C.pri + ';color:white;border:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Publier</button>';
-    var h = topBar('Journée ' + jn, (j.date ? esc(j.date) + ' · ' : '') + (j.complete || 0) + '/' + tc + ' compos', dark, true, publish);
+    var h = topBar('Journée ' + jn, (j.date ? esc(j.date) + ' · ' : '') + (j.complete || 0) + '/' + tc + ' compos', dark, true);
 
     // Journée tabs (scrollable)
     h += '<div style="display:flex;overflow-x:auto;padding:10px 12px;gap:6px;background:' + t.surf + ';border-bottom:1px solid ' + t.bord + ';-webkit-overflow-scrolling:touch">';
