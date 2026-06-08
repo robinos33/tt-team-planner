@@ -7,6 +7,7 @@ use TT\TeamPlanner\Admin\SettingsPage;
 use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Front\Shortcode;
 use TT\TeamPlanner\Front\StandaloneTemplate;
+use TT\TeamPlanner\Rest\MatchAppearanceController;
 use TT\TeamPlanner\Rest\PhaseSquadController;
 use TT\TeamPlanner\Rest\PlayersController;
 use TT\TeamPlanner\Rest\AvailabilityController;
@@ -55,6 +56,7 @@ final class Plugin
         (new PlayersController())->registerRoutes();
         (new AvailabilityController())->registerRoutes();
         (new TeamsController())->registerRoutes();
+        (new MatchAppearanceController())->registerRoutes();
         (new SyncController())->registerRoutes();
         (new SeasonController())->registerRoutes();
     }
