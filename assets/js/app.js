@@ -59,7 +59,8 @@
     squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
     burnage: {}, validations: {},
     teams: cfg.teams || [],
-    journees: buildJournees(cfg.phase || 0)
+    journees: buildJournees(cfg.phase || 0),
+    pwaPrompt: null, pwaIos: false, pwaDismissed: !!localStorage.getItem('ttp-pwa-dismissed')
   };
 
   function todayISO() {
@@ -1200,6 +1201,39 @@
   }
 
   // ═══════════════════════════════════════════
+  // PWA INSTALL BANNER
+  // ═══════════════════════════════════════════
+  function renderPwaBanner() {
+    if (S.pwaDismissed) return '';
+    var isStandalone = w.navigator.standalone === true || w.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone) return '';
+    var dark = S.dark; var t = tk(dark);
+    var base = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:' + C.priSoft + ';border-bottom:1px solid ' + C.pri + '30;';
+    if (S.pwaIos) {
+      return '<div style="' + base + 'flex-wrap:wrap">' +
+        '<div style="font-size:20px">📲</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:700;color:' + C.pri + '">Installer l\'application</div>' +
+          '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:2px">Appuyez sur <strong>⎙ Partager</strong> puis <strong>« Sur l\'écran d\'accueil »</strong></div>' +
+        '</div>' +
+        '<button data-action="pwa-dismiss" style="background:transparent;border:none;font-size:18px;color:' + t.ink2 + ';cursor:pointer;padding:4px;line-height:1">×</button>' +
+      '</div>';
+    }
+    if (S.pwaPrompt) {
+      return '<div style="' + base + '">' +
+        '<div style="font-size:20px">📲</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:700;color:' + C.pri + '">Installer l\'application</div>' +
+          '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:2px">Accès rapide depuis l\'écran d\'accueil</div>' +
+        '</div>' +
+        '<button data-action="pwa-install" style="padding:7px 12px;background:' + C.pri + ';color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Installer</button>' +
+        '<button data-action="pwa-dismiss" style="background:transparent;border:none;font-size:18px;color:' + t.ink2 + ';cursor:pointer;padding:4px;line-height:1">×</button>' +
+      '</div>';
+    }
+    return '';
+  }
+
+  // ═══════════════════════════════════════════
   // RENDER APP
   // ═══════════════════════════════════════════
   function renderApp() {
@@ -1221,6 +1255,7 @@
       }
     }
     return '<div style="width:100%;height:100%;display:flex;flex-direction:column;background:' + t.bg + ';color:' + t.ink + ';overflow:hidden;position:relative">' +
+      renderPwaBanner() +
       off +
       '<div style="flex:1;overflow-y:auto;overflow-x:hidden;background:' + t.bg + ';-webkit-overflow-scrolling:touch">' + screen + '</div>' +
       renderNav() +
@@ -1388,6 +1423,16 @@
       case 'player':       if (!S.picker) setState({ playerId: parseInt(v), screen: 'player' }); break;
       case 'back':         goBack(); break;
       case 'goto':         setState({ screen: el.dataset.screen, tab: el.dataset.tab || el.dataset.screen }); break;
+      case 'pwa-install':
+        if (S.pwaPrompt) {
+          S.pwaPrompt.prompt();
+          S.pwaPrompt.userChoice.then(function () { setState({ pwaPrompt: null, pwaDismissed: true }); });
+        }
+        break;
+      case 'pwa-dismiss':
+        localStorage.setItem('ttp-pwa-dismissed', '1');
+        setState({ pwaDismissed: true });
+        break;
       case 'phase':        var newPhase = parseInt(v); setState({ phase: newPhase, journees: buildJournees(newPhase) }); break;
       case 'team-tab':
         setState({ activeTeamI: parseInt(v) });
@@ -1477,6 +1522,20 @@
     }
   }
 
+  function initPwa() {
+    // Android / Chrome : capture beforeinstallprompt
+    w.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      setState({ pwaPrompt: e });
+    });
+    // iOS Safari : pas d'événement natif, on détecte l'UA
+    var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var isStandalone = w.navigator.standalone === true;
+    if (isIos && !isStandalone) {
+      setState({ pwaIos: true });
+    }
+  }
+
   // ═══════════════════════════════════════════
   // INIT
   // ═══════════════════════════════════════════
@@ -1511,6 +1570,7 @@
       if (h.screen === 'journee') { loadCompositions(); }
     });
     registerSW();
+    initPwa();
   }
 
   if (d.readyState === 'loading') {
