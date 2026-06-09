@@ -510,7 +510,7 @@
 
     // Phase switcher
     h += '<div style="display:flex;background:' + t.surf2 + ';padding:3px;border-radius:10px">';
-    ['Phase 1 · Sept → Janv', 'Phase 2 · Févr → Juin'].forEach(function (lbl, i) {
+    ['Phase 1', 'Phase 2'].forEach(function (lbl, i) {
       var active = S.phase === i;
       h += '<button data-action="phase" data-value="' + i + '" style="flex:1;padding:8px 6px;border:none;border-radius:8px;background:' + (active ? t.surf : 'transparent') + ';color:' + (active ? t.ink : t.ink2) + ';font-size:11px;font-weight:600;cursor:pointer;box-shadow:' + (active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none') + '">' + lbl + '</button>';
     });
