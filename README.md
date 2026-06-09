@@ -12,7 +12,7 @@ Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implé
 - 🔥 **Brûlage en temps réel** — calcul automatique des règles 2 et 3 (FFTT II.112.1) à chaque saisie
 - 📅 **Disponibilités** — chaque joueur renseigne ses disponibilités (dispo / indispo / incertain)
 - 👥 **Effectifs par phase** — ventilation des joueurs dans les équipes pour chaque demi-saison
-- 🔄 **Synchronisation FFTT** — import des licenciés depuis le plugin DataPing
+- 🔄 **Synchronisation FFTT** — import des licenciés depuis le plugin Mon Club TT
 - 📱 **Application mobile (PWA)** — installable sur iOS et Android, fonctionne hors ligne
 - 🌙 **Mode sombre** — thème clair/sombre
 
@@ -20,163 +20,13 @@ Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implé
 
 ## Captures d'écran
 
-### Tableau de bord
+| Tableau de bord | Compositions |
+|:-:|:-:|
+| ![Dashboard](assets/screenshots/dashboard.jpg) | ![Journée](assets/screenshots/journee.jpg) |
 
-```
-┌─────────────────────────────────────────────────────┐
-│  TT Planner                          ☀  Réglages   │
-│                                                     │
-│  ┌──────────────┐  ┌──────────────┐                 │
-│  │   Phase 1    │  │   Phase 2    │                 │
-│  └──────────────┘  └──────────────┘                 │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐   │
-│  │  📅  Journée 4  ·  sam. 18 jan. 2025        │   │
-│  │  4 / 8 compositions complètes               │   │
-│  │                              → Voir →        │   │
-│  └─────────────────────────────────────────────┘   │
-│                                                     │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
-│  │  J1     │  │  J2     │  │  J3 ✓   │            │
-│  │ 23 nov  │  │  7 déc  │  │ 11 jan  │            │
-│  │ 8/8 ✅  │  │ 8/8 ✅  │  │ 8/8 ✅  │            │
-│  └─────────┘  └─────────┘  └─────────┘            │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
-│  │  J4  →  │  │  J5     │  │  J6     │            │
-│  │ 18 jan  │  │  1 fév  │  │ 15 fév  │            │
-│  │ 4/8 ⚠   │  │  —      │  │  —      │            │
-│  └─────────┘  └─────────┘  └─────────┘            │
-│                                                     │
-│  ●──────────────────────────────────────────────   │
-│  Dashboard  Journées  Joueurs  Effectifs  Réglages  │
-└─────────────────────────────────────────────────────┘
-```
-
-### Vue Journée — composition d'une équipe
-
-```
-┌─────────────────────────────────────────────────────┐
-│  ← Journée 4                   sam. 18 jan. · 4/8  │
-│                                                     │
-│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐    │
-│  │  T1  │ │  T2  │ │  T3  │ │  T4  │ │  T5  │    │
-│  └──────┘ └──────┘ └──────┘ └──────┘ └──────┘    │
-│                                                     │
-│  Équipe 1 — Régionale 2          ✓ 4/4  [Validé]  │
-│  ┌───────────────────────────────────────────────┐ │
-│  │ 1  [MA]  Martin AURIAC        2045 · ✅ Dispo │×│
-│  │ 2  [LB]  Lucas BONNET         1876 · ✅ Dispo │×│
-│  │ 3  [TD]  Thomas DUPONT        1654 · ⚠ Incert │×│
-│  │ 4  [PR]  Pierre RIALLAND      1423 · ✅ Dispo │×│
-│  └───────────────────────────────────────────────┘ │
-│  [Annuler la validation]                            │
-│                                                     │
-│  Équipe 2 — Régionale 3          ⚠ 3/4             │
-│  ┌───────────────────────────────────────────────┐ │
-│  │ 1  [CR]  Clément ROUSSEAU     1521 · ✅ Dispo │×│
-│  │ 2  [JM]  Julien MARTIN        1348 · ✅ Dispo │×│
-│  │ 3  [AF]  Antoine FERNANDEZ    1290 · ✅ Dispo │×│
-│  │ +  Slot vide — Toucher pour ajouter           │+│
-│  └───────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────┘
-```
-
-### Joueur brûlé dans une composition
-
-```
-│  ┌─────────────────────────────────────────────────┐ │
-│  │ 1  [FR]  Florian RAILLARD     2013 · ○ Non rens │×│
-│  │         🔥 Brûlé                                 │ │
-│  └─────────────────────────────────────────────────┘ │
-  (fond rouge pâle, bordure rouge 2px)
-```
-
-### Sélecteur de joueur (picker)
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Slot 2 — Équipe 3                              ✕   │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ 🔍  Rechercher un joueur…                   │   │
-│  └─────────────────────────────────────────────┘   │
-│                                                     │
-│  [Tous]  [Disponibles]  [Dispo + Non brûlé]        │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ [SL]  Samuel LECONTE      1678  ✅ Dispo    │   │
-│  │ [BM]  Baptiste MOREAU     1543  ✅ Dispo    │   │
-│  │ [ND]  Nicolas DESROCHES   1489  ✅ Dispo    │   │
-│  │ [PG]  Pierre GALLET       1401  ⚠ Incertain │   │
-│  │ [CR]  Corentin ROUX       1312  🔥 Brûlé   │   │
-│  └─────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
-```
-
-### Fiche joueur
-
-```
-┌─────────────────────────────────────────────────────┐
-│  ← Fiche joueur                           [Modifier]│
-│                                                     │
-│  ┌───────────────────────────────────────────────┐ │
-│  │        [MA]                                   │ │
-│  │    Martin AURIAC          2045 pts             │ │
-│  │    ✅ Disponible    Équipe habituelle : T1     │ │
-│  └───────────────────────────────────────────────┘ │
-│                                                     │
-│  Historique Phase 1                                 │
-│  ┌─── J1 ──────────────────────────────────────┐  │
-│  │  Équipe 1 · Régionale 2  ✓ Joué             │  │
-│  └─────────────────────────────────────────────┘  │
-│  ┌─── J2 ──────────────────────────────────────┐  │
-│  │  Équipe 1 · Régionale 2  ✓ Joué             │  │
-│  └─────────────────────────────────────────────┘  │
-│  ┌─── J3 ──────────────────────────────────────┐  │
-│  │  Non programmé                               │  │
-│  └─────────────────────────────────────────────┘  │
-│                                                     │
-│  📞  06 12 34 56 78                               │
-│  📝  Disponible les samedis seulement             │
-└─────────────────────────────────────────────────────┘
-```
-
-### Gestion des effectifs par phase
-
-```
-┌─────────────────────────────────────────────────────┐
-│  ← Effectifs · Phase 1          8 équipes  [Ventil.]│
-│                                                     │
-│  Équipe 1 — Régionale 2                   12 joueurs│
-│  ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐ …                 │
-│  │MA│ │LB│ │TD│ │PR│ │JR│ │CB│                    │
-│  └──┘ └──┘ └──┘ └──┘ └──┘ └──┘                    │
-│                                                     │
-│  Équipe 2 — Régionale 3                    9 joueurs│
-│  ┌──┐ ┌──┐ ┌──┐ ┌──┐ ┌──┐                         │
-│  │CR│ │JM│ │AF│ │SL│ │BM│                         │
-│  └──┘ └──┘ └──┘ └──┘ └──┘                         │
-│                                                     │
-│  [+ Ventiler automatiquement]                       │
-└─────────────────────────────────────────────────────┘
-```
-
-### Réglages admin
-
-```
-┌─────────────────────────────────────────────────────┐
-│  Réglages                                           │
-│  ┌───────────────────────────────────────────────┐ │
-│  │  US Talence TT              Saison 2024-2025  │ │
-│  │                             8 équipes          │ │
-│  └───────────────────────────────────────────────┘ │
-│                                                     │
-│  Mode sombre          [  ●  ]                       │
-│                                                     │
-│  Phase active         [Phase 1 ▾]                  │
-│                                                     │
-│  [🔄 Synchroniser les joueurs]                      │
-└─────────────────────────────────────────────────────┘
-```
+| Liste des joueurs | Joueur brûlé |
+|:-:|:-:|
+| ![Joueurs](assets/screenshots/joueurs.jpg) | ![Brûlé](assets/screenshots/brule.jpg) |
 
 ---
 
@@ -243,7 +93,7 @@ Base : `/wp-json/ttp/v1/`
 | `GET` | `/players` | Liste de tous les licenciés |
 | `GET` | `/players/{id}` | Détail d'un joueur |
 | `PATCH` | `/players/{id}` | Mise à jour téléphone / notes |
-| `POST` | `/players/sync` | Import depuis DataPing (FFTT) |
+| `POST` | `/players/sync` | Import depuis Mon Club TT (FFTT) |
 | `GET` | `/availability` | Disponibilités `?season=&phase=` |
 | `POST` | `/availability` | Déclarer une disponibilité |
 | `GET` | `/compositions` | Compositions `?season=&phase=&round=` |
@@ -274,9 +124,9 @@ Un joueur ayant disputé **2 rencontres ou plus** au cours d'une phase dans une 
 Le rang d'une équipe est déduit de son code (ex. `T1` → rang 1, `T3` → rang 3). Plus le numéro est petit, plus l'équipe est forte.
 
 **Exemple :**
-- J1 : Florian joue en Équipe 2 (T2)
-- J2 : Florian joue en Équipe 1 (T1)
-- J3 : Florian est brûlé pour toute équipe de rang > 1 → 🔥 ne peut plus jouer qu'en T1
+- J1 : Florian joue en Équipe 1 (T1)
+- J2 : Florian joue en Équipe 2 (T2)
+- J3 : le plafond est `max(rang joué) = 2` → Florian est brûlé pour toute équipe de rang > 2 → 🔥 ne peut plus jouer qu'en T1 ou T2
 
 ### Règle 3 — Limite J2 (montée de niveau)
 
@@ -302,7 +152,7 @@ Le statut est recalculé côté serveur après chaque modification de compositio
 
 - PHP **8.1** ou supérieur
 - WordPress **6.4** ou supérieur
-- Plugin **[DataPing](https://github.com/robinos33/DataPing)** pour la synchronisation des licenciés FFTT
+- Plugin **[Mon Club TT](https://github.com/robinos33/MonClubTT)** pour la synchronisation des licenciés FFTT
 
 ---
 
