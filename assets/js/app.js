@@ -52,7 +52,7 @@
     activeTeamI: 0,
     offline: !navigator.onLine,
     players: [], availabilities: [], compositions: [], phaseCompositions: [],
-    loading: true, syncing: false, loadError: null,
+    loading: true, syncing: false, loadError: null, syncError: null,
     picker: null, pickerQ: '',
     searchQ: '', playerFilter: 'all',
     playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
@@ -263,38 +263,56 @@
     }).catch(function (err) { alert('Erreur : ' + err.message); });
   }
 
+  function invalidateBurnage(teamCode, round) {
+    var b = Object.assign({}, S.burnage);
+    delete b[burnageKey(teamCode, round)];
+    setState({ burnage: b });
+  }
+
   function assignSlot(teamCode, slotNum, playerId) {
     var ph = S.phase + 1, rn = S.journeeN, se = cfg.season || '';
-    // Optimistic
     var compos = S.compositions.filter(function (c) {
       return !(c.team_code === teamCode && c.slot_number === slotNum);
     });
     compos.push({ team_code: teamCode, slot_number: slotNum, player_id: playerId, phase: ph, round: rn, season: se });
+    invalidateBurnage(teamCode, rn);
     setState({ compositions: compos, picker: null, pickerQ: '' });
     apiFetch('/compositions', {
       method: 'POST',
       body: JSON.stringify({ team_code: teamCode, slot_number: slotNum, player_id: playerId, phase: ph, round: rn, season: se })
+    }).then(function () {
+      loadBurnageContext(teamCode, rn);
     }).catch(function () { loadCompositions(); });
   }
 
   function removeSlot(teamCode, slotNum) {
     var ph = S.phase + 1, rn = S.journeeN, se = cfg.season || '';
-    // Optimistic
     var compos = S.compositions.map(function (c) {
       return (c.team_code === teamCode && c.slot_number === slotNum)
         ? Object.assign({}, c, { player_id: null }) : c;
     });
+    invalidateBurnage(teamCode, rn);
     setState({ compositions: compos });
     apiFetch('/compositions', {
       method: 'DELETE',
       body: JSON.stringify({ team_code: teamCode, slot_number: slotNum, phase: ph, round: rn, season: se })
+    }).then(function () {
+      loadBurnageContext(teamCode, rn);
     }).catch(function () { loadCompositions(); });
   }
 
   function syncPlayers() {
-    setState({ syncing: true });
+    setState({ syncing: true, syncError: null });
     apiFetch('/players/sync', { method: 'POST' })
-      .then(function () { return loadAll(); })
+      .then(function (res) {
+        return loadAll().then(function () {
+          setState({ syncError: null });
+          if (res && res.message) alert('✅ ' + res.message);
+        });
+      })
+      .catch(function (err) {
+        setState({ syncError: String(err) });
+      })
       .finally(function () { setState({ syncing: false }); });
   }
 
@@ -475,7 +493,7 @@
     var dark = S.dark; var t = tk(dark);
     var jj = S.journees;
     var done = jj.filter(function (j) { return j.done; }).length;
-    var tc = cfg.teamsCount || S.teams.length || 11;
+    var tc = S.teams.length;
 
     // Prochaine journée globale (toutes phases confondues)
     var nextGlobal = findGlobalNext();
@@ -543,10 +561,11 @@
     var dark = S.dark; var t = tk(dark);
     var jn = S.journeeN;
     var j = S.journees.find(function (x) { return x.n === jn; }) || S.journees[0];
-    var tc = cfg.teamsCount || S.teams.length || 11;
+    var tc = S.teams.length;
     var teams = S.teams;
 
-    var h = topBar('Journée ' + jn, (j.date ? esc(j.date) + ' · ' : '') + (j.complete || 0) + '/' + tc + ' compos', dark, true);
+    var tcLabel = tc ? ((j.complete || 0) + '/' + tc + ' compos') : 'Pas d\'équipe configurée';
+    var h = topBar('Journée ' + jn, (j.date ? esc(j.date) + ' · ' : '') + tcLabel, dark, true);
 
     // Journée tabs (scrollable)
     h += '<div style="display:flex;overflow-x:auto;padding:10px 12px;gap:6px;background:' + t.surf + ';border-bottom:1px solid ' + t.bord + ';-webkit-overflow-scrolling:touch">';
@@ -602,8 +621,6 @@
       '</div>';
     if (validated) {
       h += '<button data-action="round-unvalidate" data-team="' + esc(tcode) + '" data-round="' + round + '" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:transparent;border:1px solid ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer">Annuler la validation</button>';
-    } else if (filled === 4) {
-      h += '<button data-action="round-validate" data-team="' + esc(tcode) + '" data-round="' + round + '" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:' + C.pri + ';border:none;color:white;font-size:12px;font-weight:600;cursor:pointer">✓ Valider cette composition (rencontre jouée)</button>';
     }
     h += '</div>';
 
@@ -626,7 +643,7 @@
         var burnStatus = burnMap[p.id];
         var danger = avail === 'unavailable' || p.is_burned || (burnStatus && burnStatus.burned);
         var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
-        h += '<div style="display:flex;align-items:center;background:' + t.surf + ';border:1px solid ' + (danger ? C.err : t.bord) + ';border-radius:10px;overflow:hidden">' +
+        h += '<div style="display:flex;align-items:center;background:' + (danger ? C.errSoft : t.surf) + ';border:' + (danger ? '2px' : '1px') + ' solid ' + (danger ? C.err : t.bord) + ';border-radius:10px;overflow:hidden">' +
           '<button data-action="player" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;padding:10px;background:transparent;border:none;cursor:pointer;text-align:left;min-width:0">' +
             '<div style="width:22px;height:22px;border-radius:6px;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + num + '</div>' +
             '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,' + C.pri + ',' + C.priInk + ');color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">' + esc(init) + '</div>' +
@@ -645,7 +662,6 @@
       }
     });
     h += '</div>';
-    h += '<button style="margin-top:14px;width:100%;padding:11px;border-radius:10px;background:' + t.surf + ';border:1px dashed ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer">+ Ajouter un remplaçant</button>';
     h += '</div>';
     return h;
   }
@@ -789,6 +805,7 @@
     h += '<div style="padding:12px">';
     var teams = S.teams;
     var shown = false;
+    var knownCodes = teams.map(function (tm) { return tm.code || tm.id || ''; });
     if (teams.length) {
       teams.forEach(function (team) {
         var tp = players.filter(function (p) { return p.usual_team === (team.code || team.id || ''); });
@@ -803,8 +820,19 @@
         tp.forEach(function (p) { h += renderPlayerCard(p, dark); });
         h += '</div></div>';
       });
+      // Joueurs dont l'équipe habituelle ne correspond à aucune équipe configurée
+      var unmatched = players.filter(function (p) { return knownCodes.indexOf(p.usual_team) === -1; });
+      if (unmatched.length) {
+        shown = true;
+        h += '<div style="margin-bottom:16px">';
+        h += '<div style="display:flex;align-items:center;gap:6px;padding:0 2px 6px;font-size:10px;color:' + t.ink2 + ';font-weight:600;text-transform:uppercase;letter-spacing:0.5px">' +
+          '<div style="width:6px;height:6px;border-radius:50%;background:' + t.ink2 + '"></div>Sans équipe assignée</div>';
+        h += '<div style="display:flex;flex-direction:column;gap:6px">';
+        unmatched.forEach(function (p) { h += renderPlayerCard(p, dark); });
+        h += '</div></div>';
+      }
     }
-    // Ungrouped or empty search
+    // Pas d'équipes configurées : liste à plat
     if (!teams.length) {
       h += '<div style="display:flex;flex-direction:column;gap:6px">';
       players.forEach(function (p) { h += renderPlayerCard(p, dark); });
@@ -1111,7 +1139,7 @@
         '<div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#fbbf24,' + C.pri + ');display:flex;align-items:center;justify-content:center;font-size:22px">🏓</div>' +
         '<div>' +
           '<div style="font-size:14px;font-weight:700;color:' + t.ink + '">' + esc(cfg.clubName || 'Mon Club TT') + '</div>' +
-          '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:2px">Saison ' + esc(cfg.season || '—') + ' · ' + (cfg.teamsCount || S.teams.length || 0) + ' équipes</div>' +
+          '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:2px">Saison ' + esc(cfg.season || '—') + ' · ' + S.teams.length + ' équipe' + (S.teams.length > 1 ? 's' : '') + '</div>' +
         '</div>' +
       '</div></div>';
 
@@ -1124,7 +1152,8 @@
     h += sectionWrap('Données',
       infoRow('Joueurs synchronisés', String(S.players.length), dark, false) +
       '<div style="padding:8px 12px">' +
-        '<button data-action="sync" style="width:100%;background:' + C.pri + ';color:white;border:none;padding:10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' + (S.syncing ? 'Synchronisation…' : '🔄 Synchroniser les joueurs') + '</button>' +
+        '<button data-action="sync" style="width:100%;background:' + C.pri + ';color:white;border:none;padding:10px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' + (S.syncing ? '⏳ Synchronisation…' : '🔄 Synchroniser les joueurs') + '</button>' +
+        (S.syncError ? '<div style="margin-top:8px;padding:10px;background:' + C.errSoft + ';border-radius:8px;font-size:12px;color:' + C.err + '">❌ Erreur de synchro : ' + esc(S.syncError) + '</div>' : '') +
       '</div>',
       dark);
 
