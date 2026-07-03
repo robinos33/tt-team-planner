@@ -44,7 +44,7 @@ class SyncController
             );
         }
 
-        /** @var \Joueur[]|mixed $joueurs */
+        /** @var \MonClubTT_Joueur[]|mixed $joueurs */
         // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- hook externe du plugin MonClubTT (dépendance), non modifiable
         $joueurs = apply_filters('monclubtt_get_joueurs', 'MF');
 
