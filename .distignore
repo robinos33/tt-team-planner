@@ -11,6 +11,7 @@ tests/
 phpcs.xml
 CLAUDE.md
 README.md
+CONTRIBUTING.md
 composer.json
 composer.lock
 package.json
