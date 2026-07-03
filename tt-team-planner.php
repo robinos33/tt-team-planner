@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Plugin Name: TT Team Planner
  * Plugin URI:  https://github.com/ustalencett/tt-team-planner
  * Description: Centralisez les disponibilités et préparez les compositions d'équipes pour votre club de tennis de table.
- * Version:     1.0.2
+ * Version:     1.0.3
  * Requires at least: 6.4
  * Requires PHP: 8.1
  * Author:      US Talence Tennis de Table

@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,13 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 == Changelog ==
 
+= 1.0.3 =
+* Feature: player burn tracking (brûlage) — participation history, per-round validation, and burn status surfaced in the app.
+* Feature: PWA install banner on iOS and Android.
+* Fix: simplified phase tabs (no dates) and removed non-functional "Publish" button on journée pages.
+* Fix: burned players now highlighted (red background, thick border) and burn status recalculated after each entry.
+* Fix: removed the current-phase display from the admin settings screen.
+
 = 1.0.2 =
 * Fix: bottom navigation bar now fixed to the bottom of the device viewport (100dvh).
 * Fix: REST API URL construction for sites without pretty permalinks.
@@ -64,6 +71,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Adds player burn tracking (brûlage), per-round validation, and a PWA install banner for iOS and Android.
 
 = 1.0.2 =
 Recommended update — fixes bottom nav bar, REST API URLs, and dashboard journée detection.
