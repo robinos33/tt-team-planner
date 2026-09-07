@@ -171,7 +171,13 @@ Activer le plugin depuis l'interface WordPress, puis configurer les équipes dan
 
 ### Production
 
-Télécharger la release, décompresser dans `wp-content/plugins/`, activer depuis l'administration WordPress.
+Chaque [release GitHub](https://github.com/robinos33/tt-team-planner/releases) embarque un ZIP prêt à l'emploi (`tt-team-planner.zip`), déjà nettoyé des fichiers de dev (tests, composer, etc.).
+
+1. Télécharger le ZIP de la dernière release.
+2. Dans l'administration WordPress : **Extensions → Ajouter → Téléverser une extension**, sélectionner le ZIP, **Installer maintenant**.
+3. Pour une mise à jour, réactiver après l'installation (WordPress propose de remplacer la version existante).
+
+Alternative FTP/SSH : décompresser le ZIP dans `wp-content/plugins/`.
 
 ---
 
