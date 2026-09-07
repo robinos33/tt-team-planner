@@ -59,6 +59,7 @@ class Activator
             is_young       tinyint(1)          NOT NULL DEFAULT 0,
             is_mutation    tinyint(1)          NOT NULL DEFAULT 0,
             is_burned      tinyint(1)          NOT NULL DEFAULT 0,
+            is_active      tinyint(1)          NOT NULL DEFAULT 1,
             notes          text                NOT NULL,
             raw_payload    longtext            NOT NULL,
             synced_at      datetime                     DEFAULT NULL,

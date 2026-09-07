@@ -127,6 +127,30 @@ class TeamCompositionRepository
         wp_cache_flush_group(self::CACHE_GROUP);
     }
 
+    /**
+     * Retire un joueur de toutes les compositions NON validées (toutes saisons/
+     * phases/journées confondues) — utilisé lors de la suppression d'un joueur
+     * de l'effectif. Les journées déjà validées ne sont jamais réécrites : elles
+     * reflètent un match réellement joué, dont la trace définitive vit dans
+     * tttp_match_appearances.
+     */
+    public function clearPlayerFromUnvalidatedRounds(int $playerId): void
+    {
+        global $wpdb;
+        $validatedTable = $wpdb->prefix . 'tttp_validated_rounds';
+
+        $wpdb->query($wpdb->prepare( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            "UPDATE {$this->table} tc" . // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names from $wpdb->prefix, not user input
+            " LEFT JOIN {$validatedTable} vr" .
+            "   ON vr.season = tc.season AND vr.phase = tc.phase AND vr.round = tc.round AND vr.team_code = tc.team_code" .
+            ' SET tc.player_id = NULL' .
+            ' WHERE tc.player_id = %d AND vr.id IS NULL',
+            $playerId
+        ));
+
+        wp_cache_flush_group(self::CACHE_GROUP);
+    }
+
     private function clearPlayerFromRound(string $season, int $phase, int $round, int $playerId): void
     {
         global $wpdb;
