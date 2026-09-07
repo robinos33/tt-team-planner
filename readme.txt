@@ -50,6 +50,7 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 = 1.0.4 =
 * Feature: soft-delete a player from the roster (listing and player detail screen) so they can no longer be selected in round compositions or phase squads, with a confirmation modal. History is preserved and the player can be restored at any time.
+* Fix: deleting a player now also clears them from unvalidated round compositions and phase squads (already-validated rounds and match history are left untouched).
 
 = 1.0.3 =
 * Feature: player burn tracking (brûlage) — participation history, per-round validation, and burn status surfaced in the app.

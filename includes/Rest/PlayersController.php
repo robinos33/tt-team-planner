@@ -6,6 +6,8 @@ namespace TT\TeamPlanner\Rest; // phpcs:ignore WordPress.NamingConventions.Prefi
 use WP_REST_Request;
 use WP_REST_Response;
 use TT\TeamPlanner\Repository\PlayerRepository;
+use TT\TeamPlanner\Repository\TeamCompositionRepository;
+use TT\TeamPlanner\Repository\PhaseSquadRepository;
 
 class PlayersController
 {
@@ -99,6 +101,13 @@ class PlayersController
         if (! $ok) {
             return new WP_REST_Response(['success' => false], 500);
         }
+
+        // Retire le joueur de toute sélection encore modifiable : compositions
+        // non validées et effectifs de phase. Les journées déjà validées ne
+        // sont pas réécrites (voir clearPlayerFromUnvalidatedRounds) et
+        // l'historique réel (match_appearances) n'est jamais touché.
+        (new TeamCompositionRepository())->clearPlayerFromUnvalidatedRounds($id);
+        (new PhaseSquadRepository())->removePlayerEverywhere($id);
 
         return new WP_REST_Response($repo->findById($id)?->toArray(), 200);
     }

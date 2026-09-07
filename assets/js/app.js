@@ -1452,6 +1452,12 @@
     apiFetch('/players/' + id, { method: 'DELETE' }).then(function (updated) {
       S.players = S.players.map(function (p) { return String(p.id) === String(id) ? updated : p; });
       setState({ deleteConfirm: null });
+      // Le serveur a retiré le joueur des compositions non validées et des
+      // effectifs de phase : on recharge pour refléter ce nettoyage côté écran
+      // (effectifs de phase, compteurs de compos, et la journée courante si affichée).
+      loadAll().then(function () {
+        if (S.screen === 'journee') loadCompositions();
+      });
     }).catch(function (err) {
       setState({ deleteConfirm: null });
       alert('Erreur : ' + err.message);

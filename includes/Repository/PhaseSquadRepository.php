@@ -111,6 +111,19 @@ class PhaseSquadRepository
         return $ok;
     }
 
+    /**
+     * Retire un joueur de tous les effectifs de phase (toutes saisons/phases/
+     * équipes confondues) — utilisé lors de la suppression d'un joueur de
+     * l'effectif.
+     */
+    public function removePlayerEverywhere(int $playerId): void
+    {
+        global $wpdb;
+        $wpdb->delete($this->table, ['player_id' => $playerId]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+        wp_cache_flush_group(self::CACHE_GROUP);
+    }
+
     public function existsInAnyTeam(string $season, int $phase, int $playerId): bool
     {
         $key    = "exists_{$season}_p{$phase}_{$playerId}";
