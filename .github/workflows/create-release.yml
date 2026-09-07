@@ -47,8 +47,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
+          # HEAD est le commit checkouté par actions/checkout ci-dessus (main) :
+          # c'est exactement le commit sur lequel `gh release create --target
+          # main` vient de poser le tag. On l'utilise plutôt que le nom du tag
+          # lui-même, dont l'objet n'a pas été récupéré par ce checkout
+          # (shallow, sans les tags nouvellement créés côté serveur).
           git archive --worktree-attributes \
             --prefix=tt-team-planner/ \
             -o tt-team-planner.zip \
-            "$RELEASE_TAG"
+            HEAD
           gh release upload "$RELEASE_TAG" tt-team-planner.zip --clobber
