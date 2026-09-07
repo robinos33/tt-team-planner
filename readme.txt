@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 == Changelog ==
 
+= 1.0.4 =
+* Feature: soft-delete a player from the roster (listing and player detail screen) so they can no longer be selected in round compositions or phase squads, with a confirmation modal. History is preserved and the player can be restored at any time.
+
 = 1.0.3 =
 * Feature: player burn tracking (brûlage) — participation history, per-round validation, and burn status surfaced in the app.
 * Feature: PWA install banner on iOS and Android.
@@ -71,6 +74,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.0.4 =
+Adds the ability to remove a player from the roster (soft-delete, reversible) so they can no longer be selected in team compositions.
 
 = 1.0.3 =
 Adds player burn tracking (brûlage), per-round validation, and a PWA install banner for iOS and Android.

@@ -32,6 +32,20 @@ class PlayersController
             'permission_callback' => [$this, 'canWrite'],
             'args' => ['id' => ['validate_callback' => fn($v) => is_numeric($v)]],
         ]);
+
+        register_rest_route(self::NS, '/players/(?P<id>\d+)', [
+            'methods'             => 'DELETE',
+            'callback'            => [$this, 'deletePlayer'],
+            'permission_callback' => [$this, 'canWrite'],
+            'args' => ['id' => ['validate_callback' => fn($v) => is_numeric($v)]],
+        ]);
+
+        register_rest_route(self::NS, '/players/(?P<id>\d+)/restore', [
+            'methods'             => 'POST',
+            'callback'            => [$this, 'restorePlayer'],
+            'permission_callback' => [$this, 'canWrite'],
+            'args' => ['id' => ['validate_callback' => fn($v) => is_numeric($v)]],
+        ]);
     }
 
     public function getPlayers(WP_REST_Request $request): WP_REST_Response
@@ -66,6 +80,44 @@ class PlayersController
 
         $player = $repo->findById((int) $request['id']);
         return new WP_REST_Response($player?->toArray(), 200);
+    }
+
+    /**
+     * Suppression douce de l'effectif : le joueur n'est plus sélectionnable
+     * dans les équipes mais son historique (compos, appearances) est conservé.
+     */
+    public function deletePlayer(WP_REST_Request $request): WP_REST_Response
+    {
+        $repo = new PlayerRepository();
+        $id   = (int) $request['id'];
+
+        if (! $repo->findById($id)) {
+            return new WP_REST_Response(['message' => __('Joueur introuvable.', 'tt-team-planner')], 404);
+        }
+
+        $ok = $repo->setActive($id, false);
+        if (! $ok) {
+            return new WP_REST_Response(['success' => false], 500);
+        }
+
+        return new WP_REST_Response($repo->findById($id)?->toArray(), 200);
+    }
+
+    public function restorePlayer(WP_REST_Request $request): WP_REST_Response
+    {
+        $repo = new PlayerRepository();
+        $id   = (int) $request['id'];
+
+        if (! $repo->findById($id)) {
+            return new WP_REST_Response(['message' => __('Joueur introuvable.', 'tt-team-planner')], 404);
+        }
+
+        $ok = $repo->setActive($id, true);
+        if (! $ok) {
+            return new WP_REST_Response(['success' => false], 500);
+        }
+
+        return new WP_REST_Response($repo->findById($id)?->toArray(), 200);
     }
 
     public function canRead(): bool

@@ -56,6 +56,7 @@
     picker: null, pickerQ: '',
     searchQ: '', playerFilter: 'all',
     playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
+    deleteConfirm: null,
     squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
     burnage: {}, validations: {},
     teams: cfg.teams || [],
@@ -405,6 +406,7 @@
 
   function playerBadges(p, dark, burnStatus) {
     var h = '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">';
+    if (p.is_active === false) h += badge('🗑️ Hors effectif', 'neutral', dark, true);
     if (p.is_captain) h += badge('© Cap.', 'primary', dark, true);
     if (p.is_foreign) h += badge('E', 'purple', dark, true);
     if (p.is_young)   h += badge('Jeune', 'ok', dark, true);
@@ -449,6 +451,34 @@
       '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;padding:4px 0;overflow:hidden">' +
         content +
       '</div></div>';
+  }
+
+  function deleteRestoreBtn(p, dark, size) {
+    var t = tk(dark);
+    size = size || 34;
+    var fs = size >= 34 ? '14px' : '13px';
+    if (p.is_active === false) {
+      return '<button data-action="player-restore" data-value="' + esc(p.id) + '" title="Réintégrer à l\'effectif" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:' + t.surf2 + ';color:' + t.ink2 + ';border:none;display:flex;align-items:center;justify-content:center;font-size:' + fs + ';cursor:pointer;flex-shrink:0">♻️</button>';
+    }
+    return '<button data-action="player-delete-open" data-value="' + esc(p.id) + '" title="Supprimer de l\'effectif" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:' + C.errSoft + ';color:' + C.err + ';border:none;display:flex;align-items:center;justify-content:center;font-size:' + fs + ';cursor:pointer;flex-shrink:0">🗑️</button>';
+  }
+
+  function renderDeleteConfirm() {
+    var dark = S.dark; var t = tk(dark);
+    var p = getPlayer(S.deleteConfirm);
+    var name = p ? ((p.first_name || '') + ' ' + (p.last_name || '')) : 'ce joueur';
+    return '<div style="position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px">' +
+      '<div data-action="player-delete-cancel" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>' +
+      '<div style="position:relative;background:' + t.surf + ';border-radius:14px;padding:20px;max-width:320px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.3)">' +
+        '<div style="font-size:28px;margin-bottom:8px">🗑️</div>' +
+        '<div style="font-size:15px;font-weight:700;color:' + t.ink + ';margin-bottom:6px">Supprimer ' + esc(name) + ' de l’effectif ?</div>' +
+        '<div style="font-size:12px;color:' + t.ink2 + ';line-height:1.5;margin-bottom:16px">Il ne sera plus sélectionnable dans les compositions ni les effectifs de phase. Son historique est conservé et vous pourrez le réintégrer à tout moment depuis sa fiche.</div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button data-action="player-delete-cancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid ' + t.bord + ';background:transparent;color:' + t.ink + ';font-size:13px;font-weight:600;cursor:pointer">Annuler</button>' +
+          '<button data-action="player-delete-confirm" style="flex:1;padding:10px;border-radius:8px;border:none;background:' + C.err + ';color:white;font-size:13px;font-weight:700;cursor:pointer">Supprimer</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }
 
   function infoRow(label, value, dark, hi) {
@@ -694,6 +724,7 @@
     // Filtrage + tri : squad en tête, puis joueurs habituels, puis classement DESC
     var squadIds = getSquadIds(teamCode, S.phase + 1);
     var filtered = S.players.filter(function (p) {
+      if (p.is_active === false) return false; // supprimé de l'effectif : non sélectionnable
       if (!q) return true;
       return ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase().includes(q)
           || String(p.ranking || '').includes(q);
@@ -853,7 +884,8 @@
     var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
     var phone = p.phone || '';
     var jDate = (S.journees[S.journeeN - 1] || {}).date || '';
-    var h = '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px">';
+    var inactive = p.is_active === false;
+    var h = '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;opacity:' + (inactive ? '0.6' : '1') + '">';
     h += '<button data-action="player" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left;min-width:0">' +
       avatar(init, avail, dark, 38) +
       '<div style="flex:1;min-width:0">' +
@@ -864,12 +896,13 @@
         playerBadges(p, dark) +
       '</div>' +
     '</button>';
-    if (phone) {
-      h += '<div style="display:flex;gap:6px;flex-shrink:0">';
+    h += '<div style="display:flex;gap:6px;flex-shrink:0">';
+    if (phone && !inactive) {
       h += '<a href="tel:' + esc(phone.replace(/\s/g, '')) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + C.okSoft + ';color:#15803d;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">📞</a>';
       h += '<a href="' + esc(smsHref(phone, p.first_name || '', S.journeeN, jDate)) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + t.priSoft + ';color:' + C.priInk + ';display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">💬</a>';
-      h += '</div>';
     }
+    h += deleteRestoreBtn(p, dark, 34);
+    h += '</div>';
     h += '</div>';
     return h;
   }
@@ -890,9 +923,18 @@
     var jDate = (S.journees[S.journeeN - 1] || {}).date || '';
     var team = S.teams.find(function (tm) { return (tm.code || tm.id) === p.usual_team; });
     var editBtn = '<button data-action="player-edit-open" style="width:32px;height:32px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink + ';font-size:14px;cursor:pointer">✏️</button>';
+    var actions = '<div style="display:flex;gap:6px">' + deleteRestoreBtn(p, dark, 32) + editBtn + '</div>';
 
-    var h = topBar('Fiche joueur', '', dark, true, editBtn);
+    var h = topBar('Fiche joueur', '', dark, true, actions);
     h += '<div style="padding:16px">';
+
+    if (p.is_active === false) {
+      h += '<div style="display:flex;align-items:center;gap:10px;background:' + t.surf2 + ';border:1px solid ' + t.bord + ';color:' + t.ink2 + ';padding:10px 12px;border-radius:10px;margin-bottom:14px;font-size:12px">' +
+        '<span style="font-size:16px">🗑️</span>' +
+        '<span style="flex:1"><strong style="font-weight:700;color:' + t.ink + '">Retiré de l’effectif</strong> — non sélectionnable dans les équipes.</span>' +
+        '<button data-action="player-restore" data-value="' + esc(p.id) + '" style="padding:6px 10px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">Réintégrer</button>' +
+      '</div>';
+    }
 
     // Hero
     var heroKo = avail === 'unavailable';
@@ -1078,6 +1120,7 @@
     var q = S.squadPickerQ.toLowerCase();
 
     var available = S.players.filter(function (p) {
+      if (p.is_active === false) return false; // supprimé de l'effectif : non sélectionnable
       if (squadIds.indexOf(p.id) !== -1) return false; // déjà dans le squad
       if (q) {
         var name = ((p.first_name || '') + ' ' + (p.last_name || '')).toLowerCase();
@@ -1260,6 +1303,7 @@
       '<div style="flex:1;overflow-y:auto;overflow-x:hidden;background:' + t.bg + ';-webkit-overflow-scrolling:touch">' + screen + '</div>' +
       renderNav() +
       (S.picker ? renderPicker() : '') +
+      (S.deleteConfirm ? renderDeleteConfirm() : '') +
     '</div>';
   }
 
@@ -1404,6 +1448,25 @@
     });
   }
 
+  function deletePlayer(id) {
+    apiFetch('/players/' + id, { method: 'DELETE' }).then(function (updated) {
+      S.players = S.players.map(function (p) { return String(p.id) === String(id) ? updated : p; });
+      setState({ deleteConfirm: null });
+    }).catch(function (err) {
+      setState({ deleteConfirm: null });
+      alert('Erreur : ' + err.message);
+    });
+  }
+
+  function restorePlayer(id) {
+    apiFetch('/players/' + id + '/restore', { method: 'POST' }).then(function (updated) {
+      S.players = S.players.map(function (p) { return String(p.id) === String(id) ? updated : p; });
+      render();
+    }).catch(function (err) {
+      alert('Erreur : ' + err.message);
+    });
+  }
+
   function handleClick(e) {
     var el = e.target.closest('[data-action]');
     if (!el || el.tagName === 'A') return;
@@ -1467,6 +1530,10 @@
         break;
       case 'player-edit-cancel': setState({ playerEdit: false }); break;
       case 'player-edit-save':   savePlayerEdit(); break;
+      case 'player-delete-open':    e.stopPropagation(); setState({ deleteConfirm: parseInt(v) }); break;
+      case 'player-delete-cancel':  setState({ deleteConfirm: null }); break;
+      case 'player-delete-confirm': if (S.deleteConfirm) deletePlayer(S.deleteConfirm); break;
+      case 'player-restore':        e.stopPropagation(); restorePlayer(parseInt(v)); break;
     }
   }
 

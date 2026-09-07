@@ -20,6 +20,7 @@ final class Player
         public readonly bool    $isMutation,
         public readonly string  $notes,
         public readonly ?string $syncedAt,
+        public readonly bool    $isActive = true,
     ) {}
 
     public function fullName(): string
@@ -50,6 +51,7 @@ final class Player
             isMutation:    (bool) $row['is_mutation'],
             notes:         (string) ($row['notes'] ?? ''),
             syncedAt:      $row['synced_at'] ?? null,
+            isActive:      ! array_key_exists('is_active', $row) || (bool) $row['is_active'],
         );
     }
 
@@ -70,6 +72,7 @@ final class Player
             'is_mutation'    => $this->isMutation,
             'notes'          => $this->notes,
             'synced_at'      => $this->syncedAt,
+            'is_active'      => $this->isActive,
         ];
     }
 }

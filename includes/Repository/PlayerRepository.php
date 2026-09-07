@@ -111,6 +111,7 @@ class PlayerRepository
             'is_captain'  => 0,
             'is_mutation' => 0,
             'is_burned'   => 0,
+            'is_active'   => 1,
             'notes'       => '',
         ]));
 
@@ -174,6 +175,26 @@ class PlayerRepository
             $this->invalidateCache($id);
         }
         return $ok;
+    }
+
+    /**
+     * Suppression douce (désactivation) : le joueur reste en base — historique
+     * de compos/appearances préservé — mais n'est plus sélectionnable dans
+     * les équipes. `restore()` permet de le réintégrer à l'effectif.
+     */
+    public function setActive(int $id, bool $active): bool
+    {
+        global $wpdb;
+        $ok = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $this->table,
+            ['is_active' => $active ? 1 : 0],
+            ['id' => $id]
+        );
+
+        if ($ok !== false) {
+            $this->invalidateCache($id);
+        }
+        return $ok !== false;
     }
 
     public function count(): int
