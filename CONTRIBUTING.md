@@ -142,7 +142,7 @@ Réservé aux mainteneurs.
 
 À la publication de la release, `.github/workflows/release-zip.yml` construit automatiquement un ZIP propre (via `git archive`, en excluant les fichiers listés dans `.gitattributes` : tests, composer, phpcs, etc.) et l'attache à la release — prêt à être téléversé depuis **Extensions → Ajouter → Téléverser une extension** dans wp-admin.
 
-Le push du tag déclenche aussi `.github/workflows/deploy.yml` (déploiement SVN vers WordPress.org), indépendamment de la release GitHub.
+Pas de publication sur WordPress.org (pas de dépôt SVN) : la release GitHub est la seule source de distribution.
 
 ## Questions
 
