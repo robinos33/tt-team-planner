@@ -125,6 +125,25 @@ Les tests PHP se trouvent dans `tests/`, organisés en `Unit/` et `Integration/`
 
 ---
 
+## Publier une release
+
+Réservé aux mainteneurs.
+
+1. Bumper la version à trois endroits (doivent rester synchronisés) :
+   - `tt-team-planner.php` (en-tête `Version:` + `define('TTP_VERSION', ...)`)
+   - `readme.txt` (`Stable tag:` + entrée `== Changelog ==` + `== Upgrade Notice ==`)
+2. Commit, push sur `main`.
+3. Tag et push le tag :
+   ```bash
+   git tag v1.0.5
+   git push origin v1.0.5
+   ```
+4. Créer une [release GitHub](https://github.com/robinos33/tt-team-planner/releases/new) sur ce tag, avec le contenu du changelog en description.
+
+À la publication de la release, `.github/workflows/release-zip.yml` construit automatiquement un ZIP propre (via `git archive`, en excluant les fichiers listés dans `.gitattributes` : tests, composer, phpcs, etc.) et l'attache à la release — prêt à être téléversé depuis **Extensions → Ajouter → Téléverser une extension** dans wp-admin.
+
+Le push du tag déclenche aussi `.github/workflows/deploy.yml` (déploiement SVN vers WordPress.org), indépendamment de la release GitHub.
+
 ## Questions
 
 Ouvrez une issue avant de commencer un travail important — pour éviter les doublons et aligner les attentes.
