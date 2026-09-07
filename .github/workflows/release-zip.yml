@@ -18,12 +18,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Determine tag
         id: vars
         run: echo "tag=${{ inputs.tag || github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+
+      # Sur `release: published`, checkout résout automatiquement le tag comme
+      # ref par défaut. Sur `workflow_dispatch`, le ref déclencheur est une
+      # branche (main) : il faut donc pointer explicitement sur le tag pour
+      # que git archive trouve l'objet.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.vars.outputs.tag }}
 
       - name: Build plugin ZIP
         run: |
