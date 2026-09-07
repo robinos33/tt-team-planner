@@ -37,3 +37,18 @@ jobs:
             --title "$title" \
             --notes-file /tmp/notes.md \
             --target main
+
+      # gh release create utilise GITHUB_TOKEN : ça ne déclenche pas
+      # release-zip.yml (GitHub n'enchaîne pas les workflows sur les
+      # événements générés par le token par défaut). On construit et
+      # on attache donc le zip directement ici, dans le même job.
+      - name: Build and attach plugin ZIP
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          git archive --worktree-attributes \
+            --prefix=tt-team-planner/ \
+            -o tt-team-planner.zip \
+            "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" tt-team-planner.zip --clobber
