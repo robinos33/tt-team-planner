@@ -8,6 +8,8 @@ use WP_REST_Response;
 use TT\TeamPlanner\Repository\PlayerRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
 use TT\TeamPlanner\Repository\PhaseSquadRepository;
+use TT\TeamPlanner\Repository\AvailabilityRepository;
+use TT\TeamPlanner\Repository\MatchAppearanceRepository;
 
 class PlayersController
 {
@@ -45,6 +47,13 @@ class PlayersController
         register_rest_route(self::NS, '/players/(?P<id>\d+)/restore', [
             'methods'             => 'POST',
             'callback'            => [$this, 'restorePlayer'],
+            'permission_callback' => [$this, 'canWrite'],
+            'args' => ['id' => ['validate_callback' => fn($v) => is_numeric($v)]],
+        ]);
+
+        register_rest_route(self::NS, '/players/(?P<id>\d+)/permanent', [
+            'methods'             => 'DELETE',
+            'callback'            => [$this, 'deletePlayerPermanently'],
             'permission_callback' => [$this, 'canWrite'],
             'args' => ['id' => ['validate_callback' => fn($v) => is_numeric($v)]],
         ]);
@@ -111,6 +120,34 @@ class PlayersController
         (new PhaseSquadRepository())->removePlayerEverywhere($id);
 
         return new WP_REST_Response($repo->findById($id)?->toArray(), 200);
+    }
+
+    /**
+     * Suppression définitive et irréversible : le joueur et tout son historique
+     * (disponibilités, compositions y compris journées validées, présences en
+     * match, effectifs de phase) sont effacés de la base. Contrairement à
+     * deletePlayer(), aucune restauration n'est possible ensuite.
+     */
+    public function deletePlayerPermanently(WP_REST_Request $request): WP_REST_Response
+    {
+        $repo = new PlayerRepository();
+        $id   = (int) $request['id'];
+
+        if (! $repo->findById($id)) {
+            return new WP_REST_Response(['message' => __('Joueur introuvable.', 'tt-team-planner')], 404);
+        }
+
+        (new AvailabilityRepository())->deleteByPlayer($id);
+        (new TeamCompositionRepository())->clearPlayerEverywhere($id);
+        (new MatchAppearanceRepository())->deleteByPlayer($id);
+        (new PhaseSquadRepository())->removePlayerEverywhere($id);
+
+        $ok = $repo->delete($id);
+        if (! $ok) {
+            return new WP_REST_Response(['success' => false], 500);
+        }
+
+        return new WP_REST_Response(['success' => true, 'id' => $id], 200);
     }
 
     public function restorePlayer(WP_REST_Request $request): WP_REST_Response

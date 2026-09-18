@@ -121,6 +121,20 @@ class MatchAppearanceRepository
     }
 
     /**
+     * Efface toutes les présences en match d'un joueur — utilisé lors de la
+     * suppression définitive d'un joueur de l'effectif. Contrairement à la
+     * suppression douce, cette opération efface aussi l'historique des
+     * journées déjà validées : elle est irréversible.
+     */
+    public function deleteByPlayer(int $playerId): void
+    {
+        global $wpdb;
+        $wpdb->delete($this->table, ['player_id' => $playerId]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+        wp_cache_flush_group(self::CACHE_GROUP);
+    }
+
+    /**
      * Compte les journées distinctes où le joueur a joué dans une équipe de rang <= $teamRank.
      */
     public function countDistinctRoundsAtRankOrAbove(string $season, int $phase, int $playerId, int $teamRank): int

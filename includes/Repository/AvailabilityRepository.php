@@ -109,6 +109,18 @@ class AvailabilityRepository
         return $result;
     }
 
+    /**
+     * Efface toutes les disponibilités d'un joueur — utilisé lors de la
+     * suppression définitive d'un joueur de l'effectif.
+     */
+    public function deleteByPlayer(int $playerId): void
+    {
+        global $wpdb;
+        $wpdb->delete($this->table, ['player_id' => $playerId]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+        wp_cache_flush_group(self::CACHE_GROUP);
+    }
+
     public function save(int $playerId, string $season, int $phase, int $round, string $status, string $comment = ''): void
     {
         global $wpdb;
