@@ -83,7 +83,8 @@ class PlayersController
         $repo  = new PlayerRepository();
         $notes = sanitize_textarea_field($request->get_param('notes') ?? '');
         $phone = sanitize_text_field($request->get_param('phone') ?? '');
-        $ok    = $repo->updateContactInfo((int) $request['id'], $phone, $notes);
+        $email = sanitize_email($request->get_param('email') ?? '');
+        $ok    = $repo->updateContactInfo((int) $request['id'], $phone, $notes, $email);
 
         if (! $ok) {
             return new WP_REST_Response(['success' => false], 500);

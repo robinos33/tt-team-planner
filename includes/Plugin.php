@@ -5,12 +5,14 @@ namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllG
 
 use TT\TeamPlanner\Admin\SettingsPage;
 use TT\TeamPlanner\Front\Assets;
+use TT\TeamPlanner\Front\MagicLinkTemplate;
 use TT\TeamPlanner\Front\Shortcode;
 use TT\TeamPlanner\Front\StandaloneTemplate;
 use TT\TeamPlanner\Rest\MatchAppearanceController;
 use TT\TeamPlanner\Rest\PhaseSquadController;
 use TT\TeamPlanner\Rest\PlayersController;
 use TT\TeamPlanner\Rest\AvailabilityController;
+use TT\TeamPlanner\Rest\MagicLinkController;
 use TT\TeamPlanner\Rest\TeamsController;
 use TT\TeamPlanner\Rest\SyncController;
 use TT\TeamPlanner\Rest\SeasonController;
@@ -41,6 +43,7 @@ final class Plugin
 
     public function init(): void
     {
+        (new MagicLinkTemplate())->register();
         (new StandaloneTemplate())->register();
 
         // Le shortcode et les assets classiques restent pour la compatibilité
@@ -59,6 +62,7 @@ final class Plugin
         (new MatchAppearanceController())->registerRoutes();
         (new SyncController())->registerRoutes();
         (new SeasonController())->registerRoutes();
+        (new MagicLinkController())->registerRoutes();
     }
 
     public function registerAdminMenu(): void
