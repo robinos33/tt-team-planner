@@ -200,6 +200,23 @@ class PlayerRepository
         return $ok !== false;
     }
 
+    /**
+     * Suppression définitive et irréversible : le joueur est effacé de la base.
+     * Contrairement à setActive(false), aucune restauration n'est possible.
+     * L'appelant est responsable de purger au préalable les données liées
+     * (disponibilités, compositions, présences, effectifs de phase).
+     */
+    public function delete(int $id): bool
+    {
+        global $wpdb;
+        $ok = $wpdb->delete($this->table, ['id' => $id]); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+        if ($ok) {
+            $this->invalidateCache($id);
+        }
+        return (bool) $ok;
+    }
+
     public function count(): int
     {
         $cached = wp_cache_get('count', self::CACHE_GROUP);

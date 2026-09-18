@@ -54,6 +54,12 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Fix: the service worker was served from the plugin directory, so its scope never covered the app page and offline consultation never actually worked. It is now served from the site root.
 * Fix: the service worker cached CSS/JS from every plugin, not just this one — it could serve stale assets, including in wp-admin.
 
+= 1.1.1 =
+* Fix: fatal error crashing the whole site (front and admin) since 1.0.5/1.1.0 — the magic-link classes were never loaded by the plugin bootstrap.
+
+= 1.1.0 =
+* Feature: permanently delete a player from the roster (irreversible), available once the player has already been soft-deleted. Wipes the player and all related data (availabilities, round compositions including validated rounds, match appearances, phase squads) from the database, behind a dedicated confirmation warning about the irreversibility.
+
 = 1.0.5 =
 * Feature: players can report their own availability without logging in, via a personal magic-link e-mail (token scoped to that player only, 3-month expiry). Captains/coaches can bulk-select players in the roster and send links in one action.
 * Feature: e-mail field added to the player record (editable alongside phone/notes).
@@ -89,6 +95,12 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 = 1.2.0 =
 Adds real "install as an app" support for the team management page on Android and iOS, and fixes a service worker scope bug that prevented offline consultation from ever working.
+
+= 1.1.1 =
+Critical fix: 1.0.5 and 1.1.0 crash the whole site (fatal error). Update immediately.
+
+= 1.1.0 =
+Adds permanent, irreversible deletion of a player (and their history) from the roster, in addition to the existing reversible soft-delete.
 
 = 1.0.4 =
 Adds the ability to remove a player from the roster (soft-delete, reversible) so they can no longer be selected in team compositions.

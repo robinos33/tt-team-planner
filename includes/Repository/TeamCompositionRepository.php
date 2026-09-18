@@ -151,6 +151,23 @@ class TeamCompositionRepository
         wp_cache_flush_group(self::CACHE_GROUP);
     }
 
+    /**
+     * Retire un joueur de toutes les compositions, y compris les journées déjà
+     * validées — utilisé lors de la suppression définitive d'un joueur de
+     * l'effectif (le joueur n'existe plus, sa trace ne peut plus être conservée).
+     */
+    public function clearPlayerEverywhere(int $playerId): void
+    {
+        global $wpdb;
+        $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $this->table,
+            ['player_id' => null],
+            ['player_id' => $playerId]
+        );
+
+        wp_cache_flush_group(self::CACHE_GROUP);
+    }
+
     private function clearPlayerFromRound(string $season, int $phase, int $round, int $playerId): void
     {
         global $wpdb;
