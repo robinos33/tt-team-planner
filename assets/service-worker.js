@@ -7,6 +7,12 @@
 
 var CACHE_SHELL  = 'ttp-shell-v2';
 var CACHE_API    = 'ttp-api-v2';
+
+// Chemin du plugin, passé par PHP à l'enregistrement : le SW a désormais un
+// scope global, il ne doit mettre en cache que ses propres assets.
+var PLUGIN_BASE = new URL(self.location.href).searchParams.get('base')
+  || '/wp-content/plugins/tt-team-planner/';
+
 var SHELL_ASSETS = [
   // Populated at install time — the plugin injects the real URLs via wp_localize_script
   // so we keep this list minimal and rely on runtime caching.
@@ -52,7 +58,7 @@ self.addEventListener('fetch', function (e) {
   }
 
   // Static assets (CSS/JS from this plugin) — cache-first
-  if (url.pathname.includes('/wp-content/plugins/') &&
+  if (url.pathname.startsWith(PLUGIN_BASE) &&
       (url.pathname.endsWith('.css') || url.pathname.endsWith('.js'))) {
     e.respondWith(cacheFirst(e.request, CACHE_SHELL));
     return;

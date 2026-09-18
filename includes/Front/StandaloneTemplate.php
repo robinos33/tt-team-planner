@@ -36,21 +36,29 @@ class StandaloneTemplate
         $clubName    = esc_html(get_option('ttp_club_name', 'TT Team Planner'));
         $cssUrl      = esc_url(TTP_PLUGIN_URL . 'assets/css/app.css?v=' . TTP_VERSION);
         $jsUrl       = esc_url(TTP_PLUGIN_URL . 'assets/js/app.js?v='  . TTP_VERSION);
-        $manifestUrl = esc_url(TTP_PLUGIN_URL . 'assets/manifest.json');
+        $pwaEnabled  = Assets::pwaEnabled();
 
         // On prend la main sur la réponse
         status_header(200);
         header('Content-Type: text/html; charset=utf-8');
         header('X-Robots-Tag: noindex, nofollow');
 
-        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- template standalone, toutes les variables sont esc_url()/wp_json_encode()
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- template standalone, toutes les variables sont esc_url()/esc_attr()/wp_json_encode()
         echo '<!DOCTYPE html><html lang="fr"><head>';
         echo '<meta charset="UTF-8">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">';
         echo '<meta name="theme-color" content="#2563eb">';
         echo '<meta name="robots" content="noindex,nofollow">';
         echo '<title>' . $clubName . ' — TT Team Planner</title>';
-        echo '<link rel="manifest" href="' . $manifestUrl . '">';
+        if ($pwaEnabled) {
+            // iOS ignore le manifest : l'ajout à l'écran d'accueil ne marche
+            // que via apple-touch-icon et les meta apple-mobile-web-app-*.
+            echo '<link rel="manifest" href="' . esc_url(rest_url('ttp/v1/manifest')) . '">';
+            echo '<link rel="apple-touch-icon" href="' . esc_url(Assets::pwaIconUrl()) . '">';
+            echo '<meta name="apple-mobile-web-app-capable" content="yes">';
+            echo '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">';
+            echo '<meta name="apple-mobile-web-app-title" content="' . $clubName . '">';
+        }
         echo '<link rel="stylesheet" href="' . $cssUrl . '">'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- app shell autonome, wp_enqueue_style() non applicable
         echo '</head>';
         echo '<body style="margin:0;padding:0;overflow:hidden;background:#f5f7fb;height:100dvh">';

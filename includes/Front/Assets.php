@@ -12,6 +12,45 @@ class Assets
     {
         add_action('wp_enqueue_scripts', [$this, 'enqueueFrontend']);
         add_action('wp_head',           [$this, 'injectManifestLink']);
+        add_action('template_redirect',  [$this, 'maybeServeServiceWorker'], 0);
+    }
+
+    /**
+     * Sert le service worker depuis la racine du site.
+     *
+     * Le scope d'un service worker est limité au dossier de son URL : servi
+     * depuis /wp-content/plugins/…/assets/, il ne contrôlerait jamais la page
+     * de l'application, et la consultation hors ligne ne marcherait pas.
+     */
+    public function maybeServeServiceWorker(): void
+    {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- asset public, pas de nonce applicable
+        if (! isset($_GET['ttp_service_worker'])) {
+            return;
+        }
+
+        $file = TTP_PLUGIN_DIR . 'assets/service-worker.js';
+        if (! is_readable($file)) {
+            status_header(404);
+            exit;
+        }
+
+        status_header(200);
+        header('Content-Type: application/javascript; charset=utf-8');
+        header('Service-Worker-Allowed: /');
+        header('Cache-Control: no-cache');
+        readfile($file); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- passthrough d'un asset du plugin, WP_Filesystem inutile ici
+        exit;
+    }
+
+    /** URL du service worker, servie depuis la racine pour avoir un scope global. */
+    public static function serviceWorkerUrl(): string
+    {
+        return add_query_arg([
+            'ttp_service_worker' => '1',
+            'base'               => (string) wp_parse_url(TTP_PLUGIN_URL, PHP_URL_PATH),
+            'v'                  => TTP_VERSION,
+        ], home_url('/'));
     }
 
     public function enqueueFrontend(): void
@@ -32,7 +71,11 @@ class Assets
         if (! $post || ! has_shortcode($post->post_content, 'tt_team_planner')) {
             return;
         }
-        echo '<link rel="manifest" href="' . esc_url(TTP_PLUGIN_URL . 'assets/manifest.json') . '">' . "\n";
+        if (! self::pwaEnabled()) {
+            return;
+        }
+        echo '<link rel="manifest" href="' . esc_url(rest_url('ttp/v1/manifest')) . '">' . "\n";
+        echo '<link rel="apple-touch-icon" href="' . esc_url(self::pwaIconUrl()) . '">' . "\n";
     }
 
     public function buildConfig(): array
@@ -59,7 +102,8 @@ class Assets
                 'availability' => get_option('ttp_sms_template_availability', ''),
                 'confirmation' => get_option('ttp_sms_template_confirmation', ''),
             ],
-            'swUrl'             => TTP_PLUGIN_URL . 'assets/service-worker.js',
+            'pwaEnabled'        => self::pwaEnabled(),
+            'swUrl'             => self::pwaEnabled() ? self::serviceWorkerUrl() : null,
         ];
     }
 
@@ -117,5 +161,36 @@ class Assets
         }
 
         return $bestPhase;
+    }
+
+    /** Installation PWA activée en réglages — activée par défaut, le comportement historique. */
+    public static function pwaEnabled(): bool
+    {
+        return get_option('ttp_pwa_enabled', '1') === '1';
+    }
+
+    /** Icônes du manifest — le logo TT Team Planner livré avec le plugin. */
+    public static function pwaIcons(): array
+    {
+        return [
+            [
+                'src'     => TTP_PLUGIN_URL . 'assets/icons/icon-192.png',
+                'sizes'   => '192x192',
+                'type'    => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+            [
+                'src'     => TTP_PLUGIN_URL . 'assets/icons/icon-512.png',
+                'sizes'   => '512x512',
+                'type'    => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+        ];
+    }
+
+    /** Icône pour apple-touch-icon : iOS ignore le manifest. */
+    public static function pwaIconUrl(): string
+    {
+        return TTP_PLUGIN_URL . 'assets/icons/icon-512.png';
     }
 }
