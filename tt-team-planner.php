@@ -51,6 +51,7 @@ $ttp_includes = [
     'includes/Rest/AvailabilityController.php',
     'includes/Rest/TeamsController.php',
     'includes/Rest/MatchAppearanceController.php',
+    'includes/Mail/MagicLinkMailer.php',
     'includes/Rest/MagicLinkController.php',
     'includes/Rest/SyncController.php',
     'includes/Rest/SeasonController.php',
