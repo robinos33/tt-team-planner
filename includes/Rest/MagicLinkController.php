@@ -8,6 +8,7 @@ use WP_REST_Response;
 use TT\TeamPlanner\Domain\Availability;
 use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Front\MagicLinkTemplate;
+use TT\TeamPlanner\Mail\MagicLinkMailer;
 use TT\TeamPlanner\Repository\AvailabilityRepository;
 use TT\TeamPlanner\Repository\MagicLinkRepository;
 use TT\TeamPlanner\Repository\PlayerRepository;
@@ -57,6 +58,7 @@ class MagicLinkController
 
         $players = new PlayerRepository();
         $links   = new MagicLinkRepository();
+        $mailer  = new MagicLinkMailer();
         $results = [];
 
         foreach ($playerIds as $playerId) {
@@ -72,7 +74,7 @@ class MagicLinkController
 
             $token = $links->create($playerId, $season, $ttlDays);
             $url   = MagicLinkTemplate::buildUrl($token);
-            $sent  = $this->sendEmail($player->email, $player->firstName, $url, $ttlDays);
+            $sent  = $mailer->send($player->email, $player->firstName, $url, $ttlDays);
 
             $results[] = [
                 'player_id' => $playerId,
@@ -82,29 +84,6 @@ class MagicLinkController
         }
 
         return new WP_REST_Response(['results' => $results], 200);
-    }
-
-    private function sendEmail(string $email, string $firstName, string $url, int $ttlDays): bool
-    {
-        $club    = get_option('ttp_club_name', get_bloginfo('name'));
-        $subject = sprintf(__('[%s] Vos disponibilités', 'tt-team-planner'), $club);
-
-        $body = sprintf(
-            /* translators: 1: prénom, 2: nom du club, 3: lien personnel, 4: durée en jours */
-            __(
-                "Bonjour %1\$s,\n\n" .
-                "Merci d'indiquer tes disponibilités pour les prochaines journées via ce lien personnel :\n%3\$s\n\n" .
-                "Ce lien n'est valable que pour toi et reste actif pendant %4\$d jours.\n\n" .
-                "— %2\$s",
-                'tt-team-planner'
-            ),
-            $firstName,
-            $club,
-            $url,
-            $ttlDays
-        );
-
-        return wp_mail($email, $subject, $body);
     }
 
     public function getContext(WP_REST_Request $request): WP_REST_Response

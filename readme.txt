@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,13 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.3.0 =
+* Feature: availability e-mails now list the dates of the upcoming rounds, so players know which matches they are answering for before opening the link.
+* Feature: automatic reminder — players who have not answered are e-mailed once, 7 days after the initial send. Filter `ttp_reminder_delay_days` changes the delay; 0 disables reminders entirely.
+* Fix: availability e-mails were sent from wordpress@yourdomain and displayed as "WordPress". They are now sent under the club name, from a no-reply address on the site's own domain, with Reply-To set to the site admin.
+* Improvement: availability e-mails are redesigned in the app's visual language (club header, preview of the three availability states, prominent call to action) and are sent as HTML with a plain-text alternative, which also improves their spam score.
+* Cleanup: removed an unused admin class left over from an earlier version of the sync page.
 
 = 1.2.0 =
 * Feature: the team management page can be installed as an app on Android and iOS. The web app manifest is now generated from the plugin settings (club name, link to the actual front page) instead of a static file, and the plugin ships its own icons.
@@ -92,6 +99,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Availability e-mails are no longer sent as "WordPress": they now come from the club, look the part, list the upcoming round dates, and non-responders get one automatic reminder after a week.
 
 = 1.2.0 =
 Adds real "install as an app" support for the team management page on Android and iOS, and fixes a service worker scope bug that prevented offline consultation from ever working.

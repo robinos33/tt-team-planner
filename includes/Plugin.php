@@ -8,6 +8,7 @@ use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Front\MagicLinkTemplate;
 use TT\TeamPlanner\Front\Shortcode;
 use TT\TeamPlanner\Front\StandaloneTemplate;
+use TT\TeamPlanner\Mail\AvailabilityReminder;
 use TT\TeamPlanner\Rest\MatchAppearanceController;
 use TT\TeamPlanner\Rest\PhaseSquadController;
 use TT\TeamPlanner\Rest\PlayersController;
@@ -36,6 +37,12 @@ final class Plugin
         add_action('init',           [$this, 'init']);
         add_action('rest_api_init',  [$this, 'registerRestRoutes']);
 
+        // Relances de disponibilité : le handler doit être accroché à chaque
+        // chargement (WP-Cron s'exécute dans une requête où rien d'autre du
+        // plugin n'est sollicité), la planification se répare toute seule.
+        add_action(AvailabilityReminder::CRON_HOOK, [$this, 'sendAvailabilityReminders']);
+        add_action('init', [AvailabilityReminder::class, 'ensureScheduled']);
+
         if (is_admin()) {
             add_action('admin_menu', [$this, 'registerAdminMenu']);
             add_action('admin_init', [$this, 'registerSettings']);
@@ -52,6 +59,11 @@ final class Plugin
         // est servie par StandaloneTemplate avant que le thème ne s'affiche.
         (new Shortcode())->register();
         (new Assets())->register();
+    }
+
+    public function sendAvailabilityReminders(): void
+    {
+        (new AvailabilityReminder())->run();
     }
 
     public function registerRestRoutes(): void
