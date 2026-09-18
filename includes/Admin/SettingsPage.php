@@ -19,11 +19,17 @@ class SettingsPage
         add_action('admin_post_ttp_create_front_page', [$this, 'handleCreateFrontPage']);
 
         register_setting('ttp_settings', 'ttp_club_name', ['sanitize_callback' => 'sanitize_text_field']);
+        register_setting('ttp_settings', 'ttp_pwa_enabled',               ['sanitize_callback' => [$this, 'sanitizeCheckbox']]);
         register_setting('ttp_settings', 'ttp_teams',                     ['sanitize_callback' => [$this, 'sanitizeTeams']]);
         register_setting('ttp_settings', 'ttp_sms_template_availability', ['sanitize_callback' => 'sanitize_textarea_field']);
         register_setting('ttp_settings', 'ttp_sms_template_confirmation', ['sanitize_callback' => 'sanitize_textarea_field']);
         register_setting('ttp_settings', 'ttp_journee_dates_p1',          ['sanitize_callback' => [$this, 'sanitizeDates']]);
         register_setting('ttp_settings', 'ttp_journee_dates_p2',          ['sanitize_callback' => [$this, 'sanitizeDates']]);
+    }
+
+    public function sanitizeCheckbox(mixed $raw): string
+    {
+        return $raw === '1' ? '1' : '0';
     }
 
     public function sanitizeTeams(mixed $raw): array
@@ -148,6 +154,20 @@ class SettingsPage
         echo '<th scope="row">' . esc_html__('Saison (auto)', 'tt-team-planner') . '</th>';
         echo '<td><code>' . esc_html($detectedSeason) . '</code>';
         echo ' <span class="description">' . esc_html__('Calculee depuis la date du jour.', 'tt-team-planner') . '</span></td>';
+        echo '</tr>';
+
+        // Installation PWA
+        echo '<tr>';
+        echo '<th scope="row">' . esc_html__('Installation sur mobile', 'tt-team-planner') . '</th>';
+        echo '<td>';
+        // Champ caché : une case décochée n'est pas envoyee, l'option ne serait jamais remise à 0.
+        echo '<input type="hidden" name="ttp_pwa_enabled" value="0">';
+        echo '<label for="ttp_pwa_enabled">';
+        echo '<input type="checkbox" id="ttp_pwa_enabled" name="ttp_pwa_enabled" value="1" ' . checked(\TT\TeamPlanner\Front\Assets::pwaEnabled(), true, false) . '> ';
+        echo esc_html__('Permettre l\'installation de l\'application sur l\'ecran d\'accueil (PWA)', 'tt-team-planner');
+        echo '</label>';
+        echo '<p class="description">' . esc_html__('Les utilisateurs pourront installer la page de gestion des equipes comme une application : icone sur l\'ecran d\'accueil, plein ecran, et consultation hors ligne des dernieres donnees chargees.', 'tt-team-planner') . '</p>';
+        echo '</td>';
         echo '</tr>';
 
         echo '</table>';

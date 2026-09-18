@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.5
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,12 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 == Changelog ==
 
+= 1.2.0 =
+* Feature: the team management page can be installed as an app on Android and iOS. The web app manifest is now generated from the plugin settings (club name, link to the actual front page) instead of a static file, and the plugin ships its own icons.
+* Feature: new "Installation sur mobile" setting to enable or disable installation (enabled by default).
+* Fix: the service worker was served from the plugin directory, so its scope never covered the app page and offline consultation never actually worked. It is now served from the site root.
+* Fix: the service worker cached CSS/JS from every plugin, not just this one — it could serve stale assets, including in wp-admin.
+
 = 1.0.5 =
 * Feature: players can report their own availability without logging in, via a personal magic-link e-mail (token scoped to that player only, 3-month expiry). Captains/coaches can bulk-select players in the roster and send links in one action.
 * Feature: e-mail field added to the player record (editable alongside phone/notes).
@@ -80,6 +86,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Adds real "install as an app" support for the team management page on Android and iOS, and fixes a service worker scope bug that prevented offline consultation from ever working.
 
 = 1.0.4 =
 Adds the ability to remove a player from the roster (soft-delete, reversible) so they can no longer be selected in team compositions.

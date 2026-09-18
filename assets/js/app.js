@@ -1686,6 +1686,10 @@
   }
 
   function initPwa() {
+    // Installation desactivee en admin : pas de banniere. La banniere iOS est
+    // detectee a l'UA, elle s'afficherait sinon malgre l'absence de manifest.
+    if (!cfg.pwaEnabled) return;
+
     // Android / Chrome : capture beforeinstallprompt
     w.addEventListener('beforeinstallprompt', function (e) {
       e.preventDefault();
