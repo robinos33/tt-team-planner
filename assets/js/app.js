@@ -56,7 +56,7 @@
     picker: null, pickerQ: '',
     searchQ: '', playerFilter: 'all',
     playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
-    deleteConfirm: null,
+    deleteConfirm: null, wipeConfirm: null,
     squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
     burnage: {}, validations: {},
     teams: cfg.teams || [],
@@ -458,7 +458,9 @@
     size = size || 34;
     var fs = size >= 34 ? '14px' : '13px';
     if (p.is_active === false) {
-      return '<button data-action="player-restore" data-value="' + esc(p.id) + '" title="Réintégrer à l\'effectif" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:' + t.surf2 + ';color:' + t.ink2 + ';border:none;display:flex;align-items:center;justify-content:center;font-size:' + fs + ';cursor:pointer;flex-shrink:0">♻️</button>';
+      var restoreBtn = '<button data-action="player-restore" data-value="' + esc(p.id) + '" title="Réintégrer à l\'effectif" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:' + t.surf2 + ';color:' + t.ink2 + ';border:none;display:flex;align-items:center;justify-content:center;font-size:' + fs + ';cursor:pointer;flex-shrink:0">♻️</button>';
+      var wipeBtn = '<button data-action="player-wipe-open" data-value="' + esc(p.id) + '" title="Supprimer définitivement" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:' + C.errSoft + ';color:' + C.err + ';border:none;display:flex;align-items:center;justify-content:center;font-size:' + fs + ';cursor:pointer;flex-shrink:0">❌</button>';
+      return restoreBtn + wipeBtn;
     }
     return '<button data-action="player-delete-open" data-value="' + esc(p.id) + '" title="Supprimer de l\'effectif" style="width:' + size + 'px;height:' + size + 'px;border-radius:8px;background:' + C.errSoft + ';color:' + C.err + ';border:none;display:flex;align-items:center;justify-content:center;font-size:' + fs + ';cursor:pointer;flex-shrink:0">🗑️</button>';
   }
@@ -476,6 +478,24 @@
         '<div style="display:flex;gap:8px">' +
           '<button data-action="player-delete-cancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid ' + t.bord + ';background:transparent;color:' + t.ink + ';font-size:13px;font-weight:600;cursor:pointer">Annuler</button>' +
           '<button data-action="player-delete-confirm" style="flex:1;padding:10px;border-radius:8px;border:none;background:' + C.err + ';color:white;font-size:13px;font-weight:700;cursor:pointer">Supprimer</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderWipeConfirm() {
+    var dark = S.dark; var t = tk(dark);
+    var p = getPlayer(S.wipeConfirm);
+    var name = p ? ((p.first_name || '') + ' ' + (p.last_name || '')) : 'ce joueur';
+    return '<div style="position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px">' +
+      '<div data-action="player-wipe-cancel" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>' +
+      '<div style="position:relative;background:' + t.surf + ';border-radius:14px;padding:20px;max-width:320px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.3)">' +
+        '<div style="font-size:28px;margin-bottom:8px">❌</div>' +
+        '<div style="font-size:15px;font-weight:700;color:' + t.ink + ';margin-bottom:6px">Supprimer définitivement ' + esc(name) + ' ?</div>' +
+        '<div style="font-size:12px;color:' + t.ink2 + ';line-height:1.5;margin-bottom:16px">Action <strong>irréversible</strong> : le joueur et tout son historique (disponibilités, compositions, présences en match) seront effacés de la base de données. Impossible à annuler.</div>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button data-action="player-wipe-cancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid ' + t.bord + ';background:transparent;color:' + t.ink + ';font-size:13px;font-weight:600;cursor:pointer">Annuler</button>' +
+          '<button data-action="player-wipe-confirm" style="flex:1;padding:10px;border-radius:8px;border:none;background:' + C.err + ';color:white;font-size:13px;font-weight:700;cursor:pointer">Supprimer définitivement</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -1304,6 +1324,7 @@
       renderNav() +
       (S.picker ? renderPicker() : '') +
       (S.deleteConfirm ? renderDeleteConfirm() : '') +
+      (S.wipeConfirm ? renderWipeConfirm() : '') +
     '</div>';
   }
 
@@ -1464,6 +1485,24 @@
     });
   }
 
+  function wipePlayerPermanently(id) {
+    apiFetch('/players/' + id + '/permanent', { method: 'DELETE' }).then(function () {
+      S.players = S.players.filter(function (p) { return String(p.id) !== String(id); });
+      var patch = { wipeConfirm: null };
+      if (S.screen === 'player' && String(S.playerId) === String(id)) {
+        patch.screen = 'joueurs';
+        patch.tab = 'joueurs';
+      }
+      setState(patch);
+      loadAll().then(function () {
+        if (S.screen === 'journee') loadCompositions();
+      });
+    }).catch(function (err) {
+      setState({ wipeConfirm: null });
+      alert('Erreur : ' + err.message);
+    });
+  }
+
   function restorePlayer(id) {
     apiFetch('/players/' + id + '/restore', { method: 'POST' }).then(function (updated) {
       S.players = S.players.map(function (p) { return String(p.id) === String(id) ? updated : p; });
@@ -1538,6 +1577,9 @@
       case 'player-edit-save':   savePlayerEdit(); break;
       case 'player-delete-open':    e.stopPropagation(); setState({ deleteConfirm: parseInt(v) }); break;
       case 'player-delete-cancel':  setState({ deleteConfirm: null }); break;
+      case 'player-wipe-open':      e.stopPropagation(); setState({ wipeConfirm: parseInt(v) }); break;
+      case 'player-wipe-cancel':    setState({ wipeConfirm: null }); break;
+      case 'player-wipe-confirm':   if (S.wipeConfirm) wipePlayerPermanently(S.wipeConfirm); break;
       case 'player-delete-confirm': if (S.deleteConfirm) deletePlayer(S.deleteConfirm); break;
       case 'player-restore':        e.stopPropagation(); restorePlayer(parseInt(v)); break;
     }
