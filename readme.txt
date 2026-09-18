@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.5
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 == Changelog ==
 
+= 1.1.0 =
+* Feature: permanently delete a player from the roster (irreversible), available once the player has already been soft-deleted. Wipes the player and all related data (availabilities, round compositions including validated rounds, match appearances, phase squads) from the database, behind a dedicated confirmation warning about the irreversibility.
+
 = 1.0.5 =
 * Feature: players can report their own availability without logging in, via a personal magic-link e-mail (token scoped to that player only, 3-month expiry). Captains/coaches can bulk-select players in the roster and send links in one action.
 * Feature: e-mail field added to the player record (editable alongside phone/notes).
@@ -80,6 +83,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Adds permanent, irreversible deletion of a player (and their history) from the roster, in addition to the existing reversible soft-delete.
 
 = 1.0.4 =
 Adds the ability to remove a player from the roster (soft-delete, reversible) so they can no longer be selected in team compositions.
