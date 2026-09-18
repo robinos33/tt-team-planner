@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,11 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.0.5 =
+* Feature: players can report their own availability without logging in, via a personal magic-link e-mail (token scoped to that player only, 3-month expiry). Captains/coaches can bulk-select players in the roster and send links in one action.
+* Feature: e-mail field added to the player record (editable alongside phone/notes).
+* The magic-link page is a minimal standalone page — no PWA manifest and no service worker registration — so it can never be "installed" as an app.
 
 = 1.0.4 =
 * Feature: soft-delete a player from the roster (listing and player detail screen) so they can no longer be selected in round compositions or phase squads, with a confirmation modal. History is preserved and the player can be restored at any time.

@@ -52,6 +52,7 @@ class Activator
             last_name      varchar(100)        NOT NULL DEFAULT '',
             license_number varchar(50)         NOT NULL DEFAULT '',
             phone          varchar(30)         NOT NULL DEFAULT '',
+            email          varchar(255)        NOT NULL DEFAULT '',
             ranking        int(11)             NOT NULL DEFAULT 0,
             usual_team     varchar(20)         NOT NULL DEFAULT '',
             is_foreign     tinyint(1)          NOT NULL DEFAULT 0,
@@ -127,6 +128,19 @@ class Activator
             validated_by bigint(20) UNSIGNED          DEFAULT NULL,
             PRIMARY KEY (id),
             UNIQUE KEY season_phase_round_team (season, phase, round, team_code)
+        ) $charset;";
+
+        $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_magic_links (
+            id         bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            player_id  bigint(20) UNSIGNED NOT NULL,
+            token_hash varchar(64)         NOT NULL DEFAULT '',
+            season     varchar(20)         NOT NULL DEFAULT '',
+            expires_at datetime            NOT NULL,
+            used_at    datetime                     DEFAULT NULL,
+            created_at datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY token_hash (token_hash),
+            KEY player_id (player_id)
         ) $charset;";
 
         $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_phase_squads (

@@ -55,7 +55,8 @@
     loading: true, syncing: false, loadError: null, syncError: null,
     picker: null, pickerQ: '',
     searchQ: '', playerFilter: 'all',
-    playerEdit: false, editPhone: '', editNotes: '', editSaving: false,
+    bulkMode: false, bulkSelected: {}, bulkSending: false, bulkResult: null,
+    playerEdit: false, editPhone: '', editEmail: '', editNotes: '', editSaving: false,
     deleteConfirm: null,
     squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
     burnage: {}, validations: {},
@@ -481,6 +482,27 @@
     '</div>';
   }
 
+  function renderBulkResult() {
+    var dark = S.dark; var t = tk(dark);
+    var results = S.bulkResult || [];
+    var sent    = results.filter(function (r) { return r.status === 'sent'; });
+    var noEmail = results.filter(function (r) { return r.status === 'no_email'; });
+    var failed  = results.filter(function (r) { return r.status === 'mail_failed' || r.status === 'not_found'; });
+    var line = function (r) {
+      return '<div style="font-size:12px;color:' + t.ink2 + ';padding:2px 0">' + esc(r.name || ('#' + r.player_id)) + '</div>';
+    };
+    return '<div style="position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:20px">' +
+      '<div data-action="bulk-result-close" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>' +
+      '<div style="position:relative;background:' + t.surf + ';border-radius:14px;padding:20px;max-width:340px;width:100%;max-height:70vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.3)">' +
+        '<div style="font-size:28px;margin-bottom:8px">✉️</div>' +
+        '<div style="font-size:15px;font-weight:700;color:' + t.ink + ';margin-bottom:10px">' + sent.length + ' lien' + (sent.length !== 1 ? 's' : '') + ' envoyé' + (sent.length !== 1 ? 's' : '') + ' (valable 3 mois)</div>' +
+        (noEmail.length ? '<div style="font-size:11px;font-weight:700;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.4px;margin-top:10px">Sans e-mail (' + noEmail.length + ')</div>' + noEmail.map(line).join('') : '') +
+        (failed.length ? '<div style="font-size:11px;font-weight:700;color:' + C.err + ';text-transform:uppercase;letter-spacing:0.4px;margin-top:10px">Échec d’envoi (' + failed.length + ')</div>' + failed.map(line).join('') : '') +
+        '<button data-action="bulk-result-close" style="margin-top:16px;width:100%;padding:10px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:13px;font-weight:700;cursor:pointer">OK</button>' +
+      '</div>' +
+    '</div>';
+  }
+
   function infoRow(label, value, dark, hi) {
     var t = tk(dark);
     return '<div style="display:flex;justify-content:space-between;padding:8px 12px;font-size:12px;align-items:center">' +
@@ -817,8 +839,10 @@
   function renderJoueurs() {
     var dark = S.dark; var t = tk(dark);
     var players = filteredPlayers();
+    var bulkMode = S.bulkMode;
     var addBtn = '<button style="width:32px;height:32px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:18px;cursor:pointer">+</button>';
-    var h = topBar('Joueurs', S.players.length + ' licenciés', dark, false, addBtn);
+    var selectBtn = '<button data-action="bulk-mode-toggle" style="height:32px;padding:0 10px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink + ';font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">' + (bulkMode ? 'Annuler' : 'Sélectionner') + '</button>';
+    var h = topBar('Joueurs', S.players.length + ' licenciés', dark, false, '<div style="display:flex;gap:6px">' + selectBtn + (bulkMode ? '' : addBtn) + '</div>');
 
     // Search + filters
     h += '<div style="padding:12px;background:' + t.surf + ';border-bottom:1px solid ' + t.bord + '">';
@@ -849,7 +873,7 @@
           esc(team.name || team.id || '') + (team.level ? ' · ' + esc(team.level) : '') +
         '</div>';
         h += '<div style="display:flex;flex-direction:column;gap:6px">';
-        tp.forEach(function (p) { h += renderPlayerCard(p, dark); });
+        tp.forEach(function (p) { h += renderPlayerCard(p, dark, bulkMode); });
         h += '</div></div>';
       });
       // Joueurs dont l'équipe habituelle ne correspond à aucune équipe configurée
@@ -860,14 +884,14 @@
         h += '<div style="display:flex;align-items:center;gap:6px;padding:0 2px 6px;font-size:10px;color:' + t.ink2 + ';font-weight:600;text-transform:uppercase;letter-spacing:0.5px">' +
           '<div style="width:6px;height:6px;border-radius:50%;background:' + t.ink2 + '"></div>Sans équipe assignée</div>';
         h += '<div style="display:flex;flex-direction:column;gap:6px">';
-        unmatched.forEach(function (p) { h += renderPlayerCard(p, dark); });
+        unmatched.forEach(function (p) { h += renderPlayerCard(p, dark, bulkMode); });
         h += '</div></div>';
       }
     }
     // Pas d'équipes configurées : liste à plat
     if (!teams.length) {
       h += '<div style="display:flex;flex-direction:column;gap:6px">';
-      players.forEach(function (p) { h += renderPlayerCard(p, dark); });
+      players.forEach(function (p) { h += renderPlayerCard(p, dark, bulkMode); });
       h += '</div>';
       shown = players.length > 0;
     }
@@ -875,18 +899,33 @@
       h += '<div style="padding:40px;text-align:center;color:' + t.ink2 + ';font-size:13px"><div style="font-size:36px;margin-bottom:8px">🔍</div>Aucun joueur trouvé</div>';
     }
     h += '</div>';
+
+    if (bulkMode) {
+      var selCount   = Object.keys(S.bulkSelected).length;
+      var visibleIds = players.map(function (p) { return String(p.id); });
+      var allSel     = visibleIds.length > 0 && visibleIds.every(function (id) { return S.bulkSelected[id]; });
+      h += '<div style="position:sticky;bottom:0;left:0;right:0;background:' + t.surf + ';border-top:1px solid ' + t.bord + ';padding:10px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 -4px 12px rgba(0,0,0,0.08)">' +
+        '<button data-action="bulk-select-all" style="padding:8px 10px;border-radius:8px;border:1px solid ' + t.bord + ';background:transparent;color:' + t.ink + ';font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">' + (allSel ? 'Tout désélectionner' : 'Tout sélectionner') + '</button>' +
+        '<div style="flex:1;font-size:12px;color:' + t.ink2 + '">' + selCount + ' sélectionné' + (selCount > 1 ? 's' : '') + '</div>' +
+        (S.bulkSending
+          ? '<button disabled style="padding:9px 14px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:13px;font-weight:700;cursor:not-allowed;white-space:nowrap">Envoi…</button>'
+          : '<button data-action="bulk-generate"' + (selCount ? '' : ' disabled') + ' style="padding:9px 14px;border-radius:8px;border:none;background:' + (selCount ? C.pri : t.surf2) + ';color:' + (selCount ? 'white' : t.ink2) + ';font-size:13px;font-weight:700;cursor:' + (selCount ? 'pointer' : 'not-allowed') + ';white-space:nowrap">✉️ Envoyer (3 mois)</button>') +
+      '</div>';
+    }
+
     return h;
   }
 
-  function renderPlayerCard(p, dark) {
+  function renderPlayerCard(p, dark, bulkMode) {
     var t = tk(dark);
     var avail = getAvail(p.id);
     var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
     var phone = p.phone || '';
     var jDate = (S.journees[S.journeeN - 1] || {}).date || '';
     var inactive = p.is_active === false;
-    var h = '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;opacity:' + (inactive ? '0.6' : '1') + '">';
-    h += '<button data-action="player" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left;min-width:0">' +
+    var selected = !!S.bulkSelected[String(p.id)];
+    var h = '<div style="background:' + t.surf + ';border:1px solid ' + (bulkMode && selected ? C.pri : t.bord) + ';border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px;opacity:' + (inactive ? '0.6' : '1') + '">';
+    h += '<button data-action="' + (bulkMode ? 'bulk-toggle' : 'player') + '" data-value="' + esc(p.id) + '" style="flex:1;display:flex;align-items:center;gap:10px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left;min-width:0">' +
       avatar(init, avail, dark, 38) +
       '<div style="flex:1;min-width:0">' +
         '<div style="display:flex;align-items:center;gap:5px">' +
@@ -896,13 +935,17 @@
         playerBadges(p, dark) +
       '</div>' +
     '</button>';
-    h += '<div style="display:flex;gap:6px;flex-shrink:0">';
-    if (phone && !inactive) {
-      h += '<a href="tel:' + esc(phone.replace(/\s/g, '')) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + C.okSoft + ';color:#15803d;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">📞</a>';
-      h += '<a href="' + esc(smsHref(phone, p.first_name || '', S.journeeN, jDate)) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + t.priSoft + ';color:' + C.priInk + ';display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">💬</a>';
+    if (bulkMode) {
+      h += '<div style="width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid ' + (selected ? C.pri : t.bord) + ';background:' + (selected ? C.pri : 'transparent') + ';color:white;font-size:13px;font-weight:700">' + (selected ? '✓' : '') + '</div>';
+    } else {
+      h += '<div style="display:flex;gap:6px;flex-shrink:0">';
+      if (phone && !inactive) {
+        h += '<a href="tel:' + esc(phone.replace(/\s/g, '')) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + C.okSoft + ';color:#15803d;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">📞</a>';
+        h += '<a href="' + esc(smsHref(phone, p.first_name || '', S.journeeN, jDate)) + '" onclick="event.stopPropagation()" style="width:34px;height:34px;border-radius:8px;background:' + t.priSoft + ';color:' + C.priInk + ';display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px">💬</a>';
+      }
+      h += deleteRestoreBtn(p, dark, 34);
+      h += '</div>';
     }
-    h += deleteRestoreBtn(p, dark, 34);
-    h += '</div>';
     h += '</div>';
     return h;
   }
@@ -978,6 +1021,7 @@
     // Coordonnées
     h += sectionWrap('Coordonnées',
       infoRow('Téléphone',  phone ? '<a href="tel:' + esc(phone.replace(/\s/g,'')) + '" style="color:' + C.pri + ';text-decoration:none;font-weight:600">' + esc(phone) + '</a>' : '<span style="color:' + t.ink2 + '">—</span>', dark, false) +
+      infoRow('E-mail',     p.email ? '<a href="mailto:' + esc(p.email) + '" style="color:' + C.pri + ';text-decoration:none;font-weight:600">' + esc(p.email) + '</a>' : '<span style="color:' + t.ink2 + '">—</span>', dark, false) +
       infoRow('Licence',    esc(p.license_number || '—'), dark, false) +
       infoRow('Classement', (p.ranking || 0) + ' pts', dark, false),
       dark);
@@ -1024,6 +1068,12 @@
     h += '<div>';
     h += '<label style="display:block;font-size:11px;font-weight:600;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Téléphone</label>';
     h += '<input data-input="edit-phone" type="tel" value="' + esc(S.editPhone) + '" placeholder="06 XX XX XX XX" style="' + fieldStyle + '">';
+    h += '</div>';
+
+    // Email field
+    h += '<div>';
+    h += '<label style="display:block;font-size:11px;font-weight:600;color:' + t.ink2 + ';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">E-mail</label>';
+    h += '<input data-input="edit-email" type="email" value="' + esc(S.editEmail) + '" placeholder="joueur@exemple.fr" style="' + fieldStyle + '">';
     h += '</div>';
 
     // Notes textarea
@@ -1304,6 +1354,7 @@
       renderNav() +
       (S.picker ? renderPicker() : '') +
       (S.deleteConfirm ? renderDeleteConfirm() : '') +
+      (S.bulkResult ? renderBulkResult() : '') +
     '</div>';
   }
 
@@ -1350,6 +1401,8 @@
     if (sp) sp.addEventListener('input', function (e) { S.squadPickerQ = e.target.value; render(); });
     var ep = root.querySelector('[data-input="edit-phone"]');
     if (ep) ep.addEventListener('input', function (e) { S.editPhone = e.target.value; });
+    var ee = root.querySelector('[data-input="edit-email"]');
+    if (ee) ee.addEventListener('input', function (e) { S.editEmail = e.target.value; });
     var en = root.querySelector('[data-input="edit-notes"]');
     if (en) en.addEventListener('input', function (e) { S.editNotes = e.target.value; });
   }
@@ -1436,7 +1489,7 @@
     setState({ editSaving: true });
     apiFetch('/players/' + id, {
       method: 'PATCH',
-      body: JSON.stringify({ phone: S.editPhone, notes: S.editNotes })
+      body: JSON.stringify({ phone: S.editPhone, email: S.editEmail, notes: S.editNotes })
     }).then(function (updated) {
       // Mise à jour optimiste dans S.players
       S.players = S.players.map(function (p) {
@@ -1460,6 +1513,21 @@
       });
     }).catch(function (err) {
       setState({ deleteConfirm: null });
+      alert('Erreur : ' + err.message);
+    });
+  }
+
+  function sendMagicLinks() {
+    var ids = Object.keys(S.bulkSelected).map(Number).filter(Boolean);
+    if (!ids.length) return;
+    setState({ bulkSending: true });
+    apiFetch('/magic-links/generate', {
+      method: 'POST',
+      body: JSON.stringify({ player_ids: ids, ttl_days: 90, season: cfg.season || '' })
+    }).then(function (res) {
+      setState({ bulkSending: false, bulkMode: false, bulkSelected: {}, bulkResult: res.results || [] });
+    }).catch(function (err) {
+      setState({ bulkSending: false });
       alert('Erreur : ' + err.message);
     });
   }
@@ -1532,7 +1600,7 @@
         break;
       case 'player-edit-open':
         var ep = getPlayer(S.playerId);
-        if (ep) setState({ playerEdit: true, editPhone: ep.phone || '', editNotes: ep.notes || '', editSaving: false });
+        if (ep) setState({ playerEdit: true, editPhone: ep.phone || '', editEmail: ep.email || '', editNotes: ep.notes || '', editSaving: false });
         break;
       case 'player-edit-cancel': setState({ playerEdit: false }); break;
       case 'player-edit-save':   savePlayerEdit(); break;
@@ -1540,6 +1608,28 @@
       case 'player-delete-cancel':  setState({ deleteConfirm: null }); break;
       case 'player-delete-confirm': if (S.deleteConfirm) deletePlayer(S.deleteConfirm); break;
       case 'player-restore':        e.stopPropagation(); restorePlayer(parseInt(v)); break;
+      case 'bulk-mode-toggle':
+        setState({ bulkMode: !S.bulkMode, bulkSelected: {} });
+        break;
+      case 'bulk-toggle':
+        var bid = String(v);
+        var sel = Object.assign({}, S.bulkSelected);
+        if (sel[bid]) delete sel[bid]; else sel[bid] = true;
+        setState({ bulkSelected: sel });
+        break;
+      case 'bulk-select-all':
+        var visible = filteredPlayers().map(function (p) { return String(p.id); });
+        var allSel  = visible.length > 0 && visible.every(function (id) { return S.bulkSelected[id]; });
+        if (allSel) {
+          setState({ bulkSelected: {} });
+        } else {
+          var next = {};
+          visible.forEach(function (id) { next[id] = true; });
+          setState({ bulkSelected: next });
+        }
+        break;
+      case 'bulk-generate':      sendMagicLinks(); break;
+      case 'bulk-result-close':  setState({ bulkResult: null }); break;
     }
   }
 

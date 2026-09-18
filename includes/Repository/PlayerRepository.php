@@ -107,6 +107,7 @@ class PlayerRepository
 
         $wpdb->insert($this->table, array_merge($ffttFields, [ // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             'phone'       => '',
+            'email'       => '',
             'usual_team'  => '',
             'is_captain'  => 0,
             'is_mutation' => 0,
@@ -136,6 +137,7 @@ class PlayerRepository
             'last_name'      => sanitize_text_field($data['last_name']      ?? ''),
             'license_number' => sanitize_text_field($data['license_number'] ?? ''),
             'phone'          => sanitize_text_field($data['phone']           ?? ''),
+            'email'          => sanitize_email($data['email']                ?? ''),
             'ranking'        => (int) ($data['ranking'] ?? 0),
             'usual_team'     => sanitize_text_field($data['usual_team']     ?? ''),
             'is_foreign'     => (int) (bool) ($data['is_foreign']           ?? false),
@@ -159,13 +161,14 @@ class PlayerRepository
         return $wpdb->insert_id;
     }
 
-    public function updateContactInfo(int $id, string $phone, string $notes): bool
+    public function updateContactInfo(int $id, string $phone, string $notes, string $email = ''): bool
     {
         global $wpdb;
         $ok = (bool) $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
             $this->table,
             [
                 'phone' => sanitize_text_field($phone),
+                'email' => sanitize_email($email),
                 'notes' => sanitize_textarea_field($notes),
             ],
             ['id' => $id]
