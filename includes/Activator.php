@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
+use TT\TeamPlanner\Mail\AvailabilityReminder;
+
 class Activator
 {
     public static function activate(): void
@@ -10,6 +12,7 @@ class Activator
         self::checkRequirements();
         self::createTables();
         self::seedDefaultOptions();
+        AvailabilityReminder::ensureScheduled();
         flush_rewrite_rules();
     }
 
@@ -131,16 +134,19 @@ class Activator
         ) $charset;";
 
         $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_magic_links (
-            id         bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-            player_id  bigint(20) UNSIGNED NOT NULL,
-            token_hash varchar(64)         NOT NULL DEFAULT '',
-            season     varchar(20)         NOT NULL DEFAULT '',
-            expires_at datetime            NOT NULL,
-            used_at    datetime                     DEFAULT NULL,
-            created_at datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            id          bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            player_id   bigint(20) UNSIGNED NOT NULL,
+            token_hash  varchar(64)         NOT NULL DEFAULT '',
+            season      varchar(20)         NOT NULL DEFAULT '',
+            expires_at  datetime            NOT NULL,
+            used_at     datetime                     DEFAULT NULL,
+            reminded_at datetime                     DEFAULT NULL,
+            is_reminder tinyint(1)          NOT NULL DEFAULT 0,
+            created_at  datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             UNIQUE KEY token_hash (token_hash),
-            KEY player_id (player_id)
+            KEY player_id (player_id),
+            KEY reminder_scan (season, is_reminder, used_at, reminded_at)
         ) $charset;";
 
         $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_phase_squads (
