@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.3.1 =
+* Fix: in the installed app, the bottom navigation bar was pushed below the fold by the height of the Android gesture bar — only a sliver of it remained visible. The bar now keeps clear of the system areas (Android gesture bar, iOS home indicator).
 
 = 1.3.0 =
 * Feature: availability e-mails now list the dates of the upcoming rounds, so players know which matches they are answering for before opening the link.
@@ -99,6 +102,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.3.1 =
+Fixes the bottom navigation bar being cut off below the fold in the installed app on Android.
 
 = 1.3.0 =
 Availability e-mails are no longer sent as "WordPress": they now come from the club, look the part, list the upcoming round dates, and non-responders get one automatic reminder after a week.

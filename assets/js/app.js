@@ -543,7 +543,9 @@
       { id: 'squads',    icon: '📋', label: 'Effectifs' },
       { id: 'reglages',  icon: '⚙️',  label: 'Réglages' }
     ];
-    var h = '<nav style="display:flex;border-top:1px solid ' + t.bord + ';background:' + t.surf + ';padding:4px 0;flex-shrink:0">';
+    // padding-bottom : en mode application, viewport-fit=cover etend le viewport
+    // sous la barre de gestes Android / l'indicateur d'accueil iOS. Vaut 0 ailleurs.
+    var h = '<nav style="display:flex;border-top:1px solid ' + t.bord + ';background:' + t.surf + ';padding:4px 0;padding-bottom:calc(4px + env(safe-area-inset-bottom, 0px));flex-shrink:0">';
     tabs.forEach(function (tab) {
       var active = S.tab === tab.id;
       var color  = active ? C.priInk : t.ink2;
