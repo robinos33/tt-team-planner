@@ -414,7 +414,8 @@
     if (p.is_mutation)h += badge('Mut.', 'warn', dark, true);
     if (p.is_burned)  h += badge('🔥 Brûlé', 'danger', dark, true);
     if (burnStatus && burnStatus.burned) {
-      h += badge(burnStatus.reason === 'rule3' ? '⚠ Limite J2' : '🔥 Brûlé', 'danger', dark, true);
+      var burnLabels = { rule3: '⚠ Limite J2', min_points: '⚠ Points min.', foreign: '⚠ 2e étranger' };
+      h += badge(burnLabels[burnStatus.reason] || '🔥 Brûlé', 'danger', dark, true);
     }
     h += '</div>';
     return h;

@@ -56,6 +56,7 @@ class SyncController
         }
 
         $repo   = new PlayerRepository();
+        $season = \TT\TeamPlanner\Front\Assets::computeSeason();
         $synced = 0;
         $errors = 0;
 
@@ -68,6 +69,9 @@ class SyncController
 
             $classement = $joueur->getClassement();
             $ranking    = $classement ? (int) round((float) $classement->getPointsMensuels()) : 0;
+            $official   = $classement && method_exists($classement, 'getPointsOfficiels')
+                ? (int) round((float) $classement->getPointsOfficiels())
+                : 0;
             $categorie  = strtoupper((string) $joueur->getCategorie());
 
             $repo->upsertFromMonClubTT([
@@ -76,6 +80,8 @@ class SyncController
                 'first_name'     => $joueur->getPrenom(),
                 'last_name'      => $joueur->getNom(),
                 'ranking'        => $ranking,
+                'official_points' => $official,
+                'season'         => $season,
                 'is_foreign'     => $joueur->isEtranger() ? 1 : 0,
                 'is_young'       => in_array($categorie, self::YOUTH_CATEGORIES, true) ? 1 : 0,
                 'raw_payload'    => wp_json_encode([

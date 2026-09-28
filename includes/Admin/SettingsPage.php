@@ -196,6 +196,9 @@ class SettingsPage
         echo '</form>';
 
         echo '<hr>';
+        $this->renderBurnageRulesSection();
+
+        echo '<hr>';
         $this->renderSyncSection($datapingActive, $lastSync, $repo);
         $this->renderSupportNotice();
         echo '</div>';
@@ -400,6 +403,100 @@ class SettingsPage
            . "</button>";
         echo "</div>";
         // phpcs:enable
+    }
+
+    /**
+     * Récapitulatif en lecture seule des règles de qualification (brûlage) :
+     * ce que l'application contrôle, ce qu'elle se contente de signaler et ce
+     * qui reste à la charge du capitaine. Sources : règlements sportifs FFTT
+     * (juillet 2025) et mémo du championnat régional LNATT 2025-2026.
+     */
+    private function renderBurnageRulesSection(): void
+    {
+        $statuses = [
+            'auto'   => ['#15803d', __('Contrôlé', 'tt-team-planner')],
+            'signal' => ['#b45309', __('Signalé', 'tt-team-planner')],
+            'none'   => ['#b91c1c', __('Non contrôlé', 'tt-team-planner')],
+        ];
+
+        $rules = [
+            [
+                'signal',
+                __('Une seule rencontre par journée', 'tt-team-planner'),
+                'FFTT II.112.1',
+                __('Un joueur ne peut disputer qu\'une rencontre, dans une seule équipe, au titre d\'une même journée. L\'application signale un joueur déjà placé dans une autre équipe pour la journée, sans l\'empêcher.', 'tt-team-planner'),
+            ],
+            [
+                'auto',
+                __('Brûlage après 2 rencontres', 'tt-team-planner'),
+                'FFTT II.112.1',
+                __('Un joueur ayant disputé 2 rencontres d\'une même phase, consécutives ou non, dans une équipe de numéro N (ou dans des équipes différentes) ne peut plus jouer dans une équipe de numéro supérieur à N.', 'tt-team-planner'),
+            ],
+            [
+                'auto',
+                __('Limite de la 2e journée', 'tt-team-planner'),
+                'FFTT II.112.1',
+                __('À la 2e journée d\'une phase, une équipe de 3 ou 4 joueurs ne peut comporter plus d\'un joueur ayant disputé la 1re journée dans une équipe de numéro inférieur.', 'tt-team-planner'),
+            ],
+            [
+                'auto',
+                __('Joueurs étrangers', 'tt-team-planner'),
+                'FFTT II.609',
+                __('Au plus 1 joueur étranger (hors UE, EEE et Suisse) par équipe de 4 joueurs. Un deuxième étranger est signalé « 2e étranger ». Les étrangers de moins de 18 ans nés en France ne comptent pas, mais l\'application ne sait pas les distinguer : à vérifier à la main.', 'tt-team-planner'),
+            ],
+            [
+                'signal',
+                __('Joueurs mutés', 'tt-team-planner'),
+                'FFTT II.610',
+                __('Nombre de mutés non limité, quelle que soit la phase ou le type de mutation. Le badge « Mut. » est purement informatif.', 'tt-team-planner'),
+            ],
+            [
+                'auto',
+                __('Points minimum (Nouvelle-Aquitaine)', 'tt-team-planner'),
+                'LNATT 4.1 / FFTT II.112.4',
+                __('Pré-Nationale : 1200 points minimum ; Régionale 1 : 1000 points minimum, atteints lors de l\'un des deux classements officiels de la saison. Pas de minimum en R2 et R3. Exception : si l\'équipe monte à l\'issue de la phase 1, les joueurs ayant disputé au moins 3 rencontres avec elle en phase 1 restent qualifiés. L\'application compare au meilleur classement officiel relevé à chaque synchronisation MonClubTT (resynchronisez après la parution de chaque classement) et se fonde sur le niveau saisi pour chaque équipe.', 'tt-team-planner'),
+            ],
+            [
+                'none',
+                __('Exempt, forfait et journée non jouée', 'tt-team-planner'),
+                'FFTT II.112.2',
+                __('Les joueurs inscrits sur la feuille d\'une équipe exempte ou bénéficiant d\'un forfait sont réputés avoir joué. Après un forfait de l\'équipe à la 1re journée, seuls des joueurs n\'ayant pas joué la J1 dans une autre équipe peuvent la composer à la J2. Composez et validez ces journées comme une rencontre jouée pour que le brûlage en tienne compte.', 'tt-team-planner'),
+            ],
+            [
+                'none',
+                __('Qualification pour les titres régionaux', 'tt-team-planner'),
+                'LNATT – mémo fiche 6',
+                __('Pour disputer les titres avec une équipe, il faut avoir joué au moins 2 rencontres de la phase dans cette équipe ou dans une équipe de numéro supérieur, en respectant le brûlage et les points minimum.', 'tt-team-planner'),
+            ],
+        ];
+
+        echo '<h2>' . esc_html__('Règles de brûlage et de qualification', 'tt-team-planner') . '</h2>';
+        echo '<p class="description">' . esc_html__('Règles appliquées au championnat régional par équipes de la ligue Nouvelle-Aquitaine (saison 2025-2026). Le numéro d\'équipe est déduit du code (ex. « T2 » → 2). Les équipes départementales suivent en plus le règlement de leur comité, que l\'application ne vérifie pas.', 'tt-team-planner') . '</p>';
+
+        echo '<table class="widefat striped" style="max-width:960px;margin-top:12px">';
+        echo '<thead><tr>';
+        echo '<th style="width:220px">' . esc_html__('Règle', 'tt-team-planner') . '</th>';
+        echo '<th>' . esc_html__('Détail', 'tt-team-planner') . '</th>';
+        echo '<th style="width:150px">' . esc_html__('Référence', 'tt-team-planner') . '</th>';
+        echo '<th style="width:110px">' . esc_html__('Application', 'tt-team-planner') . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($rules as [$status, $title, $ref, $detail]) {
+            [$color, $label] = $statuses[$status];
+            echo '<tr>';
+            echo '<td><strong>' . esc_html($title) . '</strong></td>';
+            echo '<td>' . esc_html($detail) . '</td>';
+            echo '<td><code>' . esc_html($ref) . '</code></td>';
+            echo '<td><span style="color:' . esc_attr($color) . ';font-weight:600">' . esc_html($label) . '</span></td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+
+        echo '<p class="description" style="margin-top:8px">';
+        echo esc_html__('Contrôlé : l\'application détecte l\'infraction dans les compositions. Signalé : l\'information est affichée, la vérification reste manuelle. Non contrôlé : à vérifier par le capitaine.', 'tt-team-planner') . ' ';
+        echo '<a href="' . esc_url('https://www.lnatt.fr/competitions/29-championnat-par-equipes') . '" target="_blank" rel="noopener">' . esc_html__('Règlements de la ligue', 'tt-team-planner') . ' &rarr;</a>';
+        echo '</p>';
     }
 
     private function renderRedirectNotice(): void
