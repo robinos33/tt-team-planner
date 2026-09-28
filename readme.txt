@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,11 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.5.0 =
+* Feature: minimum points check for Nouvelle-Aquitaine regional divisions — 1200 points in Pré-Nationale, 1000 in Régionale 1, based on the best official ranking of the season recorded at each MonClubTT sync. In phase 2, players with at least 3 phase-1 matches in the team stay eligible (FFTT II.112.4).
+* Feature: a second foreign (non-EU) player in the same team is now flagged in compositions (FFTT II.609).
+* Feature: the settings page lists the burnage and eligibility rules, with what the app checks, flags, or leaves to the captain.
 
 = 1.4.0 =
 * Feature: the player sheet shows the player's photo when one is set in MonClubTT (1.8.0 or later), looked up by licence number. Initials remain the fallback when there is no photo, when MonClubTT is missing or older, or when the image fails to load.
@@ -105,6 +110,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.5.0 =
+Adds the Nouvelle-Aquitaine minimum points rule and the one-foreign-player limit. Re-sync players after updating so their official points are recorded.
 
 = 1.4.0 =
 Player sheets now display the photos managed in MonClubTT 1.8.0+.
