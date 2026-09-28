@@ -8,7 +8,9 @@ use WP_REST_Response;
 use TT\TeamPlanner\Domain\BurnageChecker;
 use TT\TeamPlanner\Repository\MatchAppearanceRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
+use TT\TeamPlanner\Repository\TeamForfeitRepository;
 use TT\TeamPlanner\Repository\ValidatedRoundRepository;
+use TT\TeamPlanner\Sync\AppearanceImporter;
 
 class MatchAppearanceController
 {
@@ -32,6 +34,30 @@ class MatchAppearanceController
             'methods'             => 'DELETE',
             'callback'            => [$this, 'unvalidateRound'],
             'permission_callback' => [$this, 'canManage'],
+        ]);
+
+        register_rest_route(self::NS, '/appearances/import', [
+            'methods'             => 'POST',
+            'callback'            => [$this, 'importAppearances'],
+            'permission_callback' => [$this, 'canManage'],
+        ]);
+
+        register_rest_route(self::NS, '/forfeits', [
+            'methods'             => 'GET',
+            'callback'            => [$this, 'getForfeits'],
+            'permission_callback' => [$this, 'canRead'],
+        ]);
+
+        register_rest_route(self::NS, '/forfeits', [
+            'methods'             => 'POST',
+            'callback'            => [$this, 'declareForfeit'],
+            'permission_callback' => [$this, 'canWrite'],
+        ]);
+
+        register_rest_route(self::NS, '/forfeits', [
+            'methods'             => 'DELETE',
+            'callback'            => [$this, 'withdrawForfeit'],
+            'permission_callback' => [$this, 'canWrite'],
         ]);
 
         register_rest_route(self::NS, '/burnage', [
@@ -100,6 +126,74 @@ class MatchAppearanceController
         (new ValidatedRoundRepository())->unmarkValidated($season, $phase, $round, $teamCode);
 
         return new WP_REST_Response(['success' => true], 200);
+    }
+
+    public function importAppearances(WP_REST_Request $request): WP_REST_Response
+    {
+        if (! AppearanceImporter::isAvailable()) {
+            return new WP_REST_Response(
+                ['message' => __('Import indisponible : MonClubTT 1.9.0 ou plus récent doit être activé.', 'tt-team-planner')],
+                400
+            );
+        }
+
+        $report = (new AppearanceImporter())->run();
+
+        return new WP_REST_Response($report + [
+            'message' => sprintf(
+                /* translators: 1: nombre de participations, 2: nombre de journées */
+                __('%1$d participation(s) importée(s) sur %2$d journée(s) d\'équipe.', 'tt-team-planner'),
+                $report['imported'],
+                count($report['rounds'])
+            ),
+        ], 200);
+    }
+
+    public function getForfeits(WP_REST_Request $request): WP_REST_Response
+    {
+        $season = sanitize_text_field($request->get_param('season') ?? '');
+        $phase  = (int) $request->get_param('phase');
+
+        if (! $season || ! $phase) {
+            return new WP_REST_Response([], 200);
+        }
+
+        return new WP_REST_Response((new TeamForfeitRepository())->findByPhase($season, $phase), 200);
+    }
+
+    public function declareForfeit(WP_REST_Request $request): WP_REST_Response
+    {
+        [$season, $phase, $round, $teamCode] = $this->roundParams($request);
+        if (! $season || ! $phase || ! $round || ! $teamCode) {
+            return new WP_REST_Response(['message' => __('Paramètres invalides.', 'tt-team-planner')], 400);
+        }
+
+        (new TeamForfeitRepository())->declare($season, $phase, $round, $teamCode, get_current_user_id() ?: null);
+
+        return new WP_REST_Response(['success' => true], 200);
+    }
+
+    public function withdrawForfeit(WP_REST_Request $request): WP_REST_Response
+    {
+        [$season, $phase, $round, $teamCode] = $this->roundParams($request);
+        if (! $season || ! $phase || ! $round || ! $teamCode) {
+            return new WP_REST_Response(['message' => __('Paramètres invalides.', 'tt-team-planner')], 400);
+        }
+
+        (new TeamForfeitRepository())->withdraw($season, $phase, $round, $teamCode);
+
+        return new WP_REST_Response(['success' => true], 200);
+    }
+
+    /** @return array{0: string, 1: int, 2: int, 3: string} */
+    private function roundParams(WP_REST_Request $request): array
+    {
+        return [
+            sanitize_text_field($request->get_param('season') ?? ''),
+            (int) $request->get_param('phase'),
+            (int) $request->get_param('round'),
+            sanitize_text_field($request->get_param('team_code') ?? ''),
+        ];
     }
 
     public function getBurnageStatus(WP_REST_Request $request): WP_REST_Response

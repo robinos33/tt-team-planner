@@ -9,6 +9,7 @@ use TT\TeamPlanner\Front\MagicLinkTemplate;
 use TT\TeamPlanner\Front\Shortcode;
 use TT\TeamPlanner\Front\StandaloneTemplate;
 use TT\TeamPlanner\Mail\AvailabilityReminder;
+use TT\TeamPlanner\Sync\AppearanceImporter;
 use TT\TeamPlanner\Rest\MatchAppearanceController;
 use TT\TeamPlanner\Rest\PhaseSquadController;
 use TT\TeamPlanner\Rest\PlayersController;
@@ -43,6 +44,11 @@ final class Plugin
         add_action(AvailabilityReminder::CRON_HOOK, [$this, 'sendAvailabilityReminders']);
         add_action('init', [AvailabilityReminder::class, 'ensureScheduled']);
 
+        // Import des rencontres jouées depuis les feuilles FFTT (MonClubTT),
+        // même principe d'accroche et d'auto-réparation que les relances.
+        add_action(AppearanceImporter::CRON_HOOK, [$this, 'importAppearances']);
+        add_action('init', [AppearanceImporter::class, 'ensureScheduled']);
+
         if (is_admin()) {
             add_action('admin_menu', [$this, 'registerAdminMenu']);
             add_action('admin_init', [$this, 'registerSettings']);
@@ -64,6 +70,11 @@ final class Plugin
     public function sendAvailabilityReminders(): void
     {
         (new AvailabilityReminder())->run();
+    }
+
+    public function importAppearances(): void
+    {
+        (new AppearanceImporter())->run();
     }
 
     public function registerRestRoutes(): void

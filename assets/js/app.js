@@ -59,7 +59,7 @@
     playerEdit: false, editPhone: '', editEmail: '', editNotes: '', editSaving: false,
     deleteConfirm: null, wipeConfirm: null,
     squads: [], squadLoading: false, squadPickerTeam: null, squadPickerQ: '',
-    burnage: {}, validations: {},
+    burnage: {}, validations: {}, forfeits: {},
     teams: cfg.teams || [],
     journees: buildJournees(cfg.phase || 0),
     pwaPrompt: null, pwaIos: false, pwaDismissed: !!localStorage.getItem('ttp-pwa-dismissed')
@@ -215,6 +215,20 @@
   function loadBurnageContext(teamCode, round) {
     if (!teamCode || !round) return;
     var key = burnageKey(teamCode, round);
+    var ph  = S.phase + 1;
+
+    // Forfaits déclarés : chargés une fois par phase, indexés comme le brûlage.
+    if (S.forfeits['p' + ph] === undefined) {
+      S.forfeits['p' + ph] = {};
+      apiFetch('/forfeits?season=' + encodeURIComponent(cfg.season || '') + '&phase=' + ph)
+        .then(function (res) {
+          var map = {};
+          (res || []).forEach(function (f) { map[burnageKey(f.team_code, f.round)] = true; });
+          var fo = Object.assign({}, S.forfeits); fo['p' + ph] = map;
+          setState({ forfeits: fo });
+        })
+        .catch(function () {});
+    }
 
     if (S.validations[key] === undefined) {
       apiFetch('/appearances/validate?season=' + encodeURIComponent(cfg.season || '') +
@@ -263,6 +277,27 @@
       var v = Object.assign({}, S.validations); v[key] = false;
       var b = Object.assign({}, S.burnage); delete b[key];
       setState({ validations: v, burnage: b });
+    }).catch(function (err) { alert('Erreur : ' + err.message); });
+  }
+
+  function isForfeit(teamCode, round) {
+    return !!(S.forfeits['p' + (S.phase + 1)] || {})[burnageKey(teamCode, round)];
+  }
+
+  function setForfeit(teamCode, round, declared) {
+    if (declared && !confirm('Déclarer le forfait de cette équipe pour la J' + round + ' ? Les règles de qualification des autres équipes en tiennent compte.')) return;
+    var ph = S.phase + 1;
+    apiFetch('/forfeits', {
+      method: declared ? 'POST' : 'DELETE',
+      body: JSON.stringify({ season: cfg.season || '', phase: ph, round: round, team_code: teamCode })
+    }).then(function () {
+      var fo = Object.assign({}, S.forfeits);
+      var map = Object.assign({}, fo['p' + ph] || {});
+      if (declared) map[burnageKey(teamCode, round)] = true; else delete map[burnageKey(teamCode, round)];
+      fo['p' + ph] = map;
+      // Un forfait change la qualification des autres équipes : tout le brûlage est à recalculer.
+      setState({ forfeits: fo, burnage: {} });
+      loadBurnageContext(currentTeamCode(), S.journeeN);
     }).catch(function (err) { alert('Erreur : ' + err.message); });
   }
 
@@ -414,7 +449,7 @@
     if (p.is_mutation)h += badge('Mut.', 'warn', dark, true);
     if (p.is_burned)  h += badge('🔥 Brûlé', 'danger', dark, true);
     if (burnStatus && burnStatus.burned) {
-      var burnLabels = { rule3: '⚠ Limite J2', min_points: '⚠ Points min.', foreign: '⚠ 2e étranger' };
+      var burnLabels = { rule3: '⚠ Limite J2', min_points: '⚠ Points min.', foreign: '⚠ 2e étranger', forfeit: '⚠ Forfait' };
       h += badge(burnLabels[burnStatus.reason] || '🔥 Brûlé', 'danger', dark, true);
     }
     h += '</div>';
@@ -686,6 +721,7 @@
     var bKey      = burnageKey(tcode, round);
     var burnMap   = S.burnage[bKey] || {};
     var validated = !!S.validations[bKey];
+    var forfeit   = isForfeit(tcode, round);
 
     var h = '<div style="padding:12px">';
     // Team header
@@ -693,10 +729,22 @@
       '<div style="display:flex;align-items:center;gap:8px">' +
         '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">' + esc(team.name || team.id || 'Équipe') + '</div><div style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level || '') + '</div></div>' +
         (validated ? badge('✓ Journée validée', 'ok', dark, true) : '') +
-        badge(filled + '/4', filled === 4 ? 'ok' : 'warn', dark) +
+        (forfeit ? badge('Forfait', 'danger', dark, true) : badge(filled + '/4', filled === 4 ? 'ok' : 'warn', dark)) +
       '</div>';
+    var ghostBtn = 'margin-top:10px;width:100%;padding:9px;border-radius:8px;background:transparent;border:1px solid ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer';
+    var roundAttrs = ' data-team="' + esc(tcode) + '" data-round="' + round + '"';
     if (validated) {
-      h += '<button data-action="round-unvalidate" data-team="' + esc(tcode) + '" data-round="' + round + '" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:transparent;border:1px solid ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer">Annuler la validation</button>';
+      h += '<button data-action="round-unvalidate"' + roundAttrs + ' style="' + ghostBtn + '">Annuler la validation</button>';
+    } else if (forfeit) {
+      h += '<div style="margin-top:10px;font-size:12px;color:' + t.ink2 + ';line-height:1.5">Forfait déclaré pour cette journée. Les compositions des autres équipes en tiennent compte (règlement FFTT II.112.2).</div>';
+      h += '<button data-action="round-forfeit-cancel"' + roundAttrs + ' style="' + ghostBtn + '">Annuler le forfait</button>';
+    } else {
+      // Les journées jouées sont importées des feuilles FFTT ; la validation
+      // manuelle reste possible (exempt, feuille pas encore publiée…).
+      if (filled === 4) {
+        h += '<button data-action="round-validate"' + roundAttrs + ' style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:' + C.pri + ';border:none;color:white;font-size:12px;font-weight:600;cursor:pointer">✓ Valider cette composition (rencontre jouée)</button>';
+      }
+      h += '<button data-action="round-forfeit"' + roundAttrs + ' style="' + ghostBtn + '">Déclarer forfait</button>';
     }
     h += '</div>';
 
@@ -1627,6 +1675,8 @@
       case 'slot-remove':  e.stopPropagation(); removeSlot(el.dataset.team, parseInt(el.dataset.slot)); break;
       case 'round-validate':   validateTeamRound(el.dataset.team, parseInt(el.dataset.round)); break;
       case 'round-unvalidate': unvalidateTeamRound(el.dataset.team, parseInt(el.dataset.round)); break;
+      case 'round-forfeit':        setForfeit(el.dataset.team, parseInt(el.dataset.round), true); break;
+      case 'round-forfeit-cancel': setForfeit(el.dataset.team, parseInt(el.dataset.round), false); break;
       case 'picker-close': setState({ picker: null, pickerQ: '' }); break;
       case 'picker-clear':      S.pickerQ = ''; render(); break;
       case 'squad-picker-open':

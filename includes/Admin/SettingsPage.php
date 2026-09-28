@@ -200,6 +200,9 @@ class SettingsPage
 
         echo '<hr>';
         $this->renderSyncSection($datapingActive, $lastSync, $repo);
+
+        echo '<hr>';
+        $this->renderImportSection();
         $this->renderSupportNotice();
         echo '</div>';
     }
@@ -457,21 +460,15 @@ class SettingsPage
                 __('Pré-Nationale : 1200 points minimum ; Régionale 1 : 1000 points minimum, atteints lors de l\'un des deux classements officiels de la saison. Pas de minimum en R2 et R3. Exception : si l\'équipe monte à l\'issue de la phase 1, les joueurs ayant disputé au moins 3 rencontres avec elle en phase 1 restent qualifiés. L\'application compare au meilleur classement officiel relevé à chaque synchronisation MonClubTT (resynchronisez après la parution de chaque classement) et se fonde sur le niveau saisi pour chaque équipe.', 'tt-team-planner'),
             ],
             [
-                'none',
-                __('Exempt, forfait et journée non jouée', 'tt-team-planner'),
+                'auto',
+                __('Forfait, exempt et forfait adverse', 'tt-team-planner'),
                 'FFTT II.112.2',
-                __('Les joueurs inscrits sur la feuille d\'une équipe exempte ou bénéficiant d\'un forfait sont réputés avoir joué. Après un forfait de l\'équipe à la 1re journée, seuls des joueurs n\'ayant pas joué la J1 dans une autre équipe peuvent la composer à la J2. Composez et validez ces journées comme une rencontre jouée pour que le brûlage en tienne compte.', 'tt-team-planner'),
-            ],
-            [
-                'none',
-                __('Qualification pour les titres régionaux', 'tt-team-planner'),
-                'LNATT – mémo fiche 6',
-                __('Pour disputer les titres avec une équipe, il faut avoir joué au moins 2 rencontres de la phase dans cette équipe ou dans une équipe de numéro supérieur, en respectant le brûlage et les points minimum.', 'tt-team-planner'),
+                __('Forfait de l\'équipe à la 1re journée : à la 2e journée, elle ne peut aligner que des joueurs n\'ayant pas joué la 1re journée dans une autre équipe. Forfait à une autre journée : les joueurs ayant disputé la journée précédente dans l\'équipe forfait ne peuvent pas jouer, ce jour-là, dans une équipe de numéro supérieur. Le forfait se déclare depuis la journée de l\'équipe dans l\'application. Équipe exempte ou bénéficiant d\'un forfait : les joueurs inscrits sur la feuille sont réputés avoir joué ; ces feuilles n\'étant pas publiées par la FFTT, validez la composition à la main.', 'tt-team-planner'),
             ],
         ];
 
         echo '<h2>' . esc_html__('Règles de brûlage et de qualification', 'tt-team-planner') . '</h2>';
-        echo '<p class="description">' . esc_html__('Règles appliquées au championnat régional par équipes de la ligue Nouvelle-Aquitaine (saison 2025-2026). Le numéro d\'équipe est déduit du code (ex. « T2 » → 2). Les équipes départementales suivent en plus le règlement de leur comité, que l\'application ne vérifie pas.', 'tt-team-planner') . '</p>';
+        echo '<p class="description">' . esc_html__('Règles appliquées au championnat régional par équipes de la ligue Nouvelle-Aquitaine (saison 2025-2026). Le numéro d\'équipe est déduit du code (ex. « T2 » → 2). Les équipes départementales suivent en plus le règlement de leur comité, que l\'application ne vérifie pas. Les rencontres jouées sont importées des feuilles de match FFTT (voir « Rencontres jouées » plus bas).', 'tt-team-planner') . '</p>';
 
         echo '<table class="widefat striped" style="max-width:960px;margin-top:12px">';
         echo '<thead><tr>';
@@ -649,6 +646,75 @@ class SettingsPage
             btn.disabled    = false;
             btn.textContent = '{$lblSync}';
         });
+        </script>";
+    }
+
+    private function renderImportSection(): void
+    {
+        $available  = \TT\TeamPlanner\Sync\AppearanceImporter::isAvailable();
+        $lastImport = get_option('ttp_last_appearance_import');
+
+        echo '<h2>' . esc_html__('Rencontres jouées', 'tt-team-planner') . '</h2>';
+        echo '<p>';
+        echo esc_html__('Les rencontres jouées sont importées des feuilles de match FFTT, deux fois par jour : chaque équipe du club est rattachée à l\'équipe de même numéro (équipe FFTT n° 3 ↔ code « E3 ») et les joueurs sont reconnus par leur nom. La feuille officielle remplace une validation manuelle de la même journée.', 'tt-team-planner');
+        echo '</p>';
+
+        if (! $available) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Import indisponible : il nécessite MonClubTT 1.9.0 ou plus récent. En attendant, validez les compositions à la main dans l\'application.', 'tt-team-planner') . '</p></div>';
+            return;
+        }
+
+        echo '<table class="form-table" role="presentation" style="margin-bottom:12px">';
+        echo '<tr><th>' . esc_html__('Dernier import', 'tt-team-planner') . '</th>';
+        echo '<td>' . esc_html($lastImport ? (string) $lastImport : __('Jamais', 'tt-team-planner')) . '</td></tr>';
+        echo '</table>';
+
+        echo '<button id="ttp-import-btn" class="button">' . esc_html__('Importer maintenant', 'tt-team-planner') . '</button>';
+        echo '<div id="ttp-import-result" style="margin-top:12px;display:none"></div>';
+
+        $importUrl = esc_url(rest_url('ttp/v1/appearances/import'));
+        $nonce     = esc_js(wp_create_nonce('wp_rest'));
+        $labels    = wp_json_encode([
+            'wait'      => __('Import en cours...', 'tt-team-planner'),
+            'idle'      => __('Importer maintenant', 'tt-team-planner'),
+            'exempt'    => __('Journées exemptes (feuille à valider à la main)', 'tt-team-planner'),
+            'empty'     => __('Rencontres jouées sans joueurs du club sur la feuille (forfait à déclarer ?)', 'tt-team-planner'),
+            'unmatched' => __('Joueurs de la feuille introuvables (resynchronisez les joueurs)', 'tt-team-planner'),
+            'unmapped'  => __('Équipes FFTT sans équipe correspondante dans les réglages', 'tt-team-planner'),
+            'network'   => __('Erreur réseau.', 'tt-team-planner'),
+        ]);
+
+        // Rapport construit en DOM (textContent) : les noms viennent de la FFTT.
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- URL et nonce échappés, libellés encodés par wp_json_encode()
+        echo "<script>
+        (function () {
+            var L = {$labels};
+            var btn = document.getElementById('ttp-import-btn');
+            var out = document.getElementById('ttp-import-result');
+            function add(tag, text, parent) { var el = document.createElement(tag); el.textContent = text; (parent || out).appendChild(el); return el; }
+            btn.addEventListener('click', async function () {
+                btn.disabled = true; btn.textContent = L.wait;
+                out.style.display = 'none'; out.textContent = '';
+                try {
+                    var res  = await fetch('{$importUrl}', { method: 'POST', headers: { 'X-WP-Nonce': '{$nonce}' } });
+                    var data = await res.json();
+                    out.className = 'notice ' + (res.ok ? 'notice-success' : 'notice-error');
+                    add('p', data.message || '');
+                    ['exempt', 'empty', 'unmatched', 'unmapped'].forEach(function (k) {
+                        if (!data[k] || !data[k].length) return;
+                        add('p', L[k] + ' :');
+                        var ul = add('ul', '');
+                        ul.style.cssText = 'list-style:disc;margin-left:20px';
+                        data[k].forEach(function (item) { add('li', item, ul); });
+                    });
+                } catch (e) {
+                    out.className = 'notice notice-error';
+                    add('p', L.network + ' ' + e.message);
+                }
+                out.style.display = 'block';
+                btn.disabled = false; btn.textContent = L.idle;
+            });
+        })();
         </script>";
     }
 }
