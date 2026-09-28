@@ -5,6 +5,7 @@ namespace TT\TeamPlanner\Rest; // phpcs:ignore WordPress.NamingConventions.Prefi
 
 use WP_REST_Request;
 use WP_REST_Response;
+use TT\TeamPlanner\Domain\Player;
 use TT\TeamPlanner\Repository\PlayerRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
 use TT\TeamPlanner\Repository\PhaseSquadRepository;
@@ -63,7 +64,7 @@ class PlayersController
     {
         $repo    = new PlayerRepository();
         $players = $repo->findAll();
-        return new WP_REST_Response(array_map(fn($p) => $p->toArray(), $players), 200);
+        return new WP_REST_Response(array_map(fn($p) => $this->serialize($p), $players), 200);
     }
 
     public function getPlayer(WP_REST_Request $request): WP_REST_Response
@@ -75,7 +76,7 @@ class PlayersController
             return new WP_REST_Response(['message' => __('Joueur introuvable.', 'tt-team-planner')], 404);
         }
 
-        return new WP_REST_Response($player->toArray(), 200);
+        return new WP_REST_Response($this->serialize($player), 200);
     }
 
     public function updatePlayer(WP_REST_Request $request): WP_REST_Response
@@ -91,7 +92,7 @@ class PlayersController
         }
 
         $player = $repo->findById((int) $request['id']);
-        return new WP_REST_Response($player?->toArray(), 200);
+        return new WP_REST_Response($this->serialize($player), 200);
     }
 
     /**
@@ -119,7 +120,7 @@ class PlayersController
         (new TeamCompositionRepository())->clearPlayerFromUnvalidatedRounds($id);
         (new PhaseSquadRepository())->removePlayerEverywhere($id);
 
-        return new WP_REST_Response($repo->findById($id)?->toArray(), 200);
+        return new WP_REST_Response($this->serialize($repo->findById($id)), 200);
     }
 
     /**
@@ -164,7 +165,25 @@ class PlayersController
             return new WP_REST_Response(['success' => false], 500);
         }
 
-        return new WP_REST_Response($repo->findById($id)?->toArray(), 200);
+        return new WP_REST_Response($this->serialize($repo->findById($id)), 200);
+    }
+
+    /**
+     * Ajoute l'URL de la photo gérée dans MonClubTT (>= 1.8.0), indexée par
+     * numéro de licence. Chaîne vide si MonClubTT est absent ou sans photo.
+     */
+    private function serialize(?Player $player): ?array
+    {
+        if (! $player) {
+            return null;
+        }
+
+        $data              = $player->toArray();
+        $data['photo_url'] = function_exists('monclubtt_get_joueur_photo_url')
+            ? (string) monclubtt_get_joueur_photo_url($player->licenseNumber, 'thumbnail')
+            : '';
+
+        return $data;
     }
 
     public function canRead(): bool

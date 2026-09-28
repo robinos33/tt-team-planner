@@ -1006,6 +1006,8 @@
     h += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;padding:' + (heroKo ? '12px' : '0') + ';background:' + heroBg + ';border:' + heroBord + ';border-radius:14px">';
     h += '<div style="position:relative;width:64px;height:64px;flex-shrink:0">' +
       '<div style="width:64px;height:64px;border-radius:50%;background:' + (heroKo ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,' + C.pri + ',' + C.priInk + ')') + ';color:white;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">' + esc(init) + '</div>' +
+      // Photo MonClubTT par-dessus les initiales, qui restent en repli si l'image ne charge pas
+      (p.photo_url ? '<img src="' + esc(p.photo_url) + '" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:64px;height:64px;border-radius:50%;object-fit:cover;background:' + t.surf2 + (heroKo ? ';box-shadow:0 0 0 2px #ef4444' : '') + '">' : '') +
       (heroKo ? '<span style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,0.15)">🚫</span>' : '') +
     '</div>';
     h += '<div style="flex:1;min-width:0">' +
