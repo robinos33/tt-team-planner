@@ -14,6 +14,10 @@ $ttp_tables = [
     $wpdb->prefix . 'tttp_availabilities',
     $wpdb->prefix . 'tttp_team_compositions',
     $wpdb->prefix . 'tttp_phase_squads',
+    $wpdb->prefix . 'tttp_match_appearances',
+    $wpdb->prefix . 'tttp_validated_rounds',
+    $wpdb->prefix . 'tttp_magic_links',
+    $wpdb->prefix . 'tttp_team_forfeits',
 ];
 
 foreach ($ttp_tables as $ttp_table) {
@@ -36,6 +40,7 @@ $ttp_options = [
     'ttp_journee_dates_p1',
     'ttp_journee_dates_p2',
     'ttp_last_sync',
+    'ttp_last_appearance_import',
 ];
 
 foreach ($ttp_options as $ttp_option) {
