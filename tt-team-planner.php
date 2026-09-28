@@ -46,6 +46,8 @@ $ttp_includes = [
     'includes/Repository/PhaseSquadRepository.php',
     'includes/Repository/MatchAppearanceRepository.php',
     'includes/Repository/ValidatedRoundRepository.php',
+    'includes/Repository/TeamForfeitRepository.php',
+    'includes/Sync/AppearanceImporter.php',
     'includes/Rest/PhaseSquadController.php',
     'includes/Rest/PlayersController.php',
     'includes/Rest/AvailabilityController.php',

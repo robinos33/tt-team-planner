@@ -5,6 +5,7 @@ namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.Pre
 
 use TT\TeamPlanner\Repository\MatchAppearanceRepository;
 use TT\TeamPlanner\Repository\PlayerRepository;
+use TT\TeamPlanner\Repository\TeamForfeitRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
 
 /**
@@ -27,6 +28,14 @@ use TT\TeamPlanner\Repository\TeamCompositionRepository;
  *  - Étrangers (FFTT II.609) : une équipe de 4 joueurs ou moins ne peut
  *    comporter qu'un seul joueur étranger.
  *
+ * Et les deux conséquences d'un forfait déclaré (FFTT II.112.2) :
+ *
+ *  - Forfait à la 1re journée : à la 2e journée, l'équipe ne peut aligner que
+ *    des joueurs n'ayant pas joué la 1re journée dans une autre équipe.
+ *  - Forfait à une autre journée : les joueurs ayant disputé la journée
+ *    précédente dans l'équipe forfait ne peuvent pas jouer, à cette journée,
+ *    dans une équipe de numéro supérieur.
+ *
  * Le "numéro" d'une équipe est déduit du `team_code` (ex. "T1" → 1, "T2" → 2).
  * Si aucun chiffre n'est trouvé, les règles de brûlage sont désactivées pour
  * cette équipe ; les règles de participation restent vérifiées.
@@ -40,6 +49,7 @@ final class BurnageChecker
         private readonly MatchAppearanceRepository $appearances = new MatchAppearanceRepository(),
         private readonly TeamCompositionRepository $compositions = new TeamCompositionRepository(),
         private readonly PlayerRepository $players = new PlayerRepository(),
+        private readonly TeamForfeitRepository $forfeits = new TeamForfeitRepository(),
     ) {}
 
     /**
@@ -78,10 +88,16 @@ final class BurnageChecker
 
         if ($teamRank !== null) {
             $status = $this->checkRule2($season, $phase, $playerId, $teamRank)
-                ?? $this->checkRule3($season, $phase, $round, $teamCode, $teamRank, $playerId);
+                ?? $this->checkRule3($season, $phase, $round, $teamCode, $teamRank, $playerId)
+                ?? $this->checkForfeitPreviousRound($season, $phase, $round, $teamRank, $playerId);
             if ($status !== null) {
                 return $status;
             }
+        }
+
+        $status = $this->checkForfeitFirstRound($season, $phase, $round, $teamCode, $playerId);
+        if ($status !== null) {
+            return $status;
         }
 
         $player = $this->players->findById($playerId);
@@ -92,6 +108,59 @@ final class BurnageChecker
         return $this->checkMinimumPoints($season, $phase, $teamCode, $player)
             ?? $this->checkForeignLimit($season, $phase, $round, $teamCode, $player)
             ?? BurnageStatus::ok();
+    }
+
+    private function checkForfeitFirstRound(string $season, int $phase, int $round, string $teamCode, int $playerId): ?BurnageStatus
+    {
+        if ($round !== 2 || ! $this->forfeits->isForfeit($season, $phase, 1, $teamCode)) {
+            return null;
+        }
+
+        foreach ($this->appearances->findByPhaseAndRound($season, $phase, 1) as $appearance) {
+            if ($appearance->playerId === $playerId && $appearance->teamCode !== $teamCode) {
+                return new BurnageStatus(
+                    true,
+                    'forfeit',
+                    __("Forfait de l'équipe à la 1re journée : à la 2e journée, elle ne peut aligner que des joueurs n'ayant pas joué la 1re journée dans une autre équipe.", 'tt-team-planner')
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private function checkForfeitPreviousRound(string $season, int $phase, int $round, int $teamRank, int $playerId): ?BurnageStatus
+    {
+        if ($round < 2) {
+            return null;
+        }
+
+        $forfeitRanks = [];
+        foreach ($this->forfeits->teamsForRound($season, $phase, $round) as $forfeitCode) {
+            $rank = self::extractTeamRank($forfeitCode);
+            if ($rank !== null && $rank < $teamRank) {
+                $forfeitRanks[$forfeitCode] = $rank;
+            }
+        }
+        if ($forfeitRanks === []) {
+            return null;
+        }
+
+        foreach ($this->appearances->findByPhaseAndRound($season, $phase, $round - 1) as $appearance) {
+            if ($appearance->playerId === $playerId && isset($forfeitRanks[$appearance->teamCode])) {
+                return new BurnageStatus(
+                    true,
+                    'forfeit',
+                    sprintf(
+                        /* translators: %s: code de l'équipe forfait */
+                        __("L'équipe %s est forfait à cette journée : ses joueurs de la journée précédente ne peuvent pas jouer dans une équipe de numéro supérieur.", 'tt-team-planner'),
+                        $appearance->teamCode
+                    )
+                );
+            }
+        }
+
+        return null;
     }
 
     private function checkMinimumPoints(string $season, int $phase, string $teamCode, Player $player): ?BurnageStatus

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 use TT\TeamPlanner\Mail\AvailabilityReminder;
+use TT\TeamPlanner\Sync\AppearanceImporter;
 
 class Activator
 {
@@ -13,6 +14,7 @@ class Activator
         self::createTables();
         self::seedDefaultOptions();
         AvailabilityReminder::ensureScheduled();
+        AppearanceImporter::ensureScheduled();
         flush_rewrite_rules();
     }
 
@@ -162,6 +164,18 @@ class Activator
             PRIMARY KEY (id),
             UNIQUE KEY season_phase_team_player (season, phase, team_code, player_id),
             KEY season_phase (season, phase)
+        ) $charset;";
+
+        $sql[] = "CREATE TABLE {$wpdb->prefix}tttp_team_forfeits (
+            id          bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            season      varchar(20)         NOT NULL DEFAULT '',
+            phase       tinyint(1)          NOT NULL DEFAULT 1,
+            round       tinyint(2)          NOT NULL DEFAULT 1,
+            team_code   varchar(20)         NOT NULL DEFAULT '',
+            declared_at datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            declared_by bigint(20) UNSIGNED          DEFAULT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY season_phase_round_team (season, phase, round, team_code)
         ) $charset;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
