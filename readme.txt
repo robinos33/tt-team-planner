@@ -51,6 +51,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 = 1.4.0 =
 * Feature: the player sheet shows the player's photo when one is set in MonClubTT (1.8.0 or later), looked up by licence number. Initials remain the fallback when there is no photo, when MonClubTT is missing or older, or when the image fails to load.
 
+= 1.3.1 =
+* Fix: in the installed app, the bottom navigation bar was pushed below the fold by the height of the Android gesture bar — only a sliver of it remained visible. The bar now keeps clear of the system areas (Android gesture bar, iOS home indicator).
+
 = 1.3.0 =
 * Feature: availability e-mails now list the dates of the upcoming rounds, so players know which matches they are answering for before opening the link.
 * Feature: automatic reminder — players who have not answered are e-mailed once, 7 days after the initial send. Filter `ttp_reminder_delay_days` changes the delay; 0 disables reminders entirely.
@@ -105,6 +108,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 = 1.4.0 =
 Player sheets now display the photos managed in MonClubTT 1.8.0+.
+
+= 1.3.1 =
+Fixes the bottom navigation bar being cut off below the fold in the installed app on Android.
 
 = 1.3.0 =
 Availability e-mails are no longer sent as "WordPress": they now come from the club, look the part, list the upcoming round dates, and non-responders get one automatic reminder after a week.
