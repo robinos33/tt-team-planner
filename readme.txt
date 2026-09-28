@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,13 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.6.0 =
+* Feature: played matches are imported twice a day from the official FFTT match sheets, read through MonClubTT 1.9.0+. Each club team is matched to the planner team with the same number, players are recognised by name, and the round is marked as validated. An "Import now" button and a report (bye rounds, sheets without club players, unknown players) are available in the settings.
+* Feature: team forfeits can be declared from a team's round. The two FFTT II.112.2 consequences are checked: after a forfeit on round 1, the team can only field players who did not play round 1 for another team; after a forfeit on another round, the players who played the previous round for that team cannot play for a higher-numbered team that day.
+* Fix: the "Validate this line-up" button had disappeared from team rounds since June, so no match was ever recorded and the burnage rules never triggered. It is back as a fallback to the FFTT import (bye rounds, sheets not yet published).
+* Fix: uninstalling the plugin now also drops the match, validated round, magic link and forfeit tables.
+* Changed: the regional titles qualification is no longer listed in the rules summary.
 
 = 1.5.0 =
 * Feature: minimum points check for Nouvelle-Aquitaine regional divisions — 1200 points in Pré-Nationale, 1000 in Régionale 1, based on the best official ranking of the season recorded at each MonClubTT sync. In phase 2, players with at least 3 phase-1 matches in the team stay eligible (FFTT II.112.4).
@@ -110,6 +117,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.6.0 =
+Burnage rules work again: played matches are now imported from the FFTT match sheets (requires MonClubTT 1.9.0) and team forfeits can be declared. Update MonClubTT first.
 
 = 1.5.0 =
 Adds the Nouvelle-Aquitaine minimum points rule and the one-foreign-player limit. Re-sync players after updating so their official points are recorded.
