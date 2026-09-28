@@ -83,9 +83,20 @@ class PlayerRepository
 
         $externalId = sanitize_text_field($data['external_id'] ?? '');
 
-        $existing = $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-            $wpdb->prepare("SELECT id FROM {$this->table} WHERE external_id = %s", $externalId) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $existingRow = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->prepare("SELECT id, best_official_points, best_official_season FROM {$this->table} WHERE external_id = %s", $externalId), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            ARRAY_A
         );
+        $existing = $existingRow['id'] ?? null;
+
+        // Les points minimum se jugent sur l'un des deux classements officiels
+        // de la saison : on conserve le meilleur relevé de la saison en cours,
+        // remis à zéro au changement de saison.
+        $season         = sanitize_text_field($data['season'] ?? '');
+        $officialPoints = (int) ($data['official_points'] ?? 0);
+        if ($existingRow && $existingRow['best_official_season'] === $season) {
+            $officialPoints = max($officialPoints, (int) $existingRow['best_official_points']);
+        }
 
         $ffttFields = [
             'external_id'    => $externalId,
@@ -93,6 +104,8 @@ class PlayerRepository
             'first_name'     => sanitize_text_field($data['first_name']     ?? ''),
             'last_name'      => sanitize_text_field($data['last_name']      ?? ''),
             'ranking'        => (int) ($data['ranking']   ?? 0),
+            'best_official_points' => $officialPoints,
+            'best_official_season' => $season,
             'is_foreign'     => (int) (bool) ($data['is_foreign'] ?? false),
             'is_young'       => (int) (bool) ($data['is_young']   ?? false),
             'raw_payload'    => sanitize_textarea_field($data['raw_payload'] ?? ''),

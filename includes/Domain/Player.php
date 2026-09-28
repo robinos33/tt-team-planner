@@ -22,6 +22,8 @@ final class Player
         public readonly string  $notes,
         public readonly ?string $syncedAt,
         public readonly bool    $isActive = true,
+        public readonly int     $bestOfficialPoints = 0,
+        public readonly string  $bestOfficialSeason = '',
     ) {}
 
     public function fullName(): string
@@ -54,6 +56,8 @@ final class Player
             notes:         (string) ($row['notes'] ?? ''),
             syncedAt:      $row['synced_at'] ?? null,
             isActive:      ! array_key_exists('is_active', $row) || (bool) $row['is_active'],
+            bestOfficialPoints: (int) ($row['best_official_points'] ?? 0),
+            bestOfficialSeason: (string) ($row['best_official_season'] ?? ''),
         );
     }
 
@@ -76,6 +80,8 @@ final class Player
             'notes'          => $this->notes,
             'synced_at'      => $this->syncedAt,
             'is_active'      => $this->isActive,
+            'best_official_points' => $this->bestOfficialPoints,
+            'best_official_season' => $this->bestOfficialSeason,
         ];
     }
 }

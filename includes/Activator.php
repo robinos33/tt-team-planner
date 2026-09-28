@@ -57,6 +57,8 @@ class Activator
             phone          varchar(30)         NOT NULL DEFAULT '',
             email          varchar(255)        NOT NULL DEFAULT '',
             ranking        int(11)             NOT NULL DEFAULT 0,
+            best_official_points int(11)       NOT NULL DEFAULT 0,
+            best_official_season varchar(20)   NOT NULL DEFAULT '',
             usual_team     varchar(20)         NOT NULL DEFAULT '',
             is_foreign     tinyint(1)          NOT NULL DEFAULT 0,
             is_captain     tinyint(1)          NOT NULL DEFAULT 0,

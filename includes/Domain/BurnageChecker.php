@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
 use TT\TeamPlanner\Repository\MatchAppearanceRepository;
+use TT\TeamPlanner\Repository\PlayerRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
 
 /**
@@ -16,15 +17,51 @@ use TT\TeamPlanner\Repository\TeamCompositionRepository;
  *  - Règle 3 : à la 2e journée d'une phase, une équipe ne peut comporter plus
  *    d'un joueur ayant disputé la 1re journée dans une équipe de numéro inférieur.
  *
+ * S'y ajoutent deux règles de participation :
+ *
+ *  - Points minimum (règlement régional LNATT, art. 4.1) : 1200 points en
+ *    Pré-Nationale, 1000 en Régionale 1, atteints lors de l'un des deux
+ *    classements officiels de la saison. Exception (FFTT II.112.4) : en
+ *    phase 2, un joueur ayant disputé au moins 3 rencontres avec l'équipe en
+ *    phase 1 reste qualifié.
+ *  - Étrangers (FFTT II.609) : une équipe de 4 joueurs ou moins ne peut
+ *    comporter qu'un seul joueur étranger.
+ *
  * Le "numéro" d'une équipe est déduit du `team_code` (ex. "T1" → 1, "T2" → 2).
- * Si aucun chiffre n'est trouvé, le contrôle est désactivé pour cette équipe.
+ * Si aucun chiffre n'est trouvé, les règles de brûlage sont désactivées pour
+ * cette équipe ; les règles de participation restent vérifiées.
  */
 final class BurnageChecker
 {
+    /** Rencontres de phase 1 avec l'équipe qui maintiennent la qualification en phase 2 (FFTT II.112.4). */
+    private const PROMOTION_MIN_APPEARANCES = 3;
+
     public function __construct(
         private readonly MatchAppearanceRepository $appearances = new MatchAppearanceRepository(),
         private readonly TeamCompositionRepository $compositions = new TeamCompositionRepository(),
+        private readonly PlayerRepository $players = new PlayerRepository(),
     ) {}
+
+    /**
+     * Points minimum exigés par le niveau d'une équipe, ou null si le niveau
+     * n'impose rien. Accepte les libellés des réglages ("Pré-Nationale",
+     * "Régionale 1") comme les abréviations ("PN", "R1").
+     */
+    public static function minimumPointsForLevel(string $level): ?int
+    {
+        $normalized = strtolower(remove_accents(trim($level)));
+        $normalized = (string) preg_replace('/[^a-z0-9]+/', ' ', $normalized);
+        $normalized = trim($normalized);
+
+        if (in_array($normalized, ['pn', 'pre nationale', 'pre national'], true)) {
+            return 1200;
+        }
+        if (in_array($normalized, ['r1', 'regionale 1', 'regional 1'], true)) {
+            return 1000;
+        }
+
+        return null;
+    }
 
     public static function extractTeamRank(string $teamCode): ?int
     {
@@ -38,13 +75,97 @@ final class BurnageChecker
     public function statusFor(string $season, int $phase, int $round, string $teamCode, int $playerId): BurnageStatus
     {
         $teamRank = self::extractTeamRank($teamCode);
-        if ($teamRank === null) {
+
+        if ($teamRank !== null) {
+            $status = $this->checkRule2($season, $phase, $playerId, $teamRank)
+                ?? $this->checkRule3($season, $phase, $round, $teamCode, $teamRank, $playerId);
+            if ($status !== null) {
+                return $status;
+            }
+        }
+
+        $player = $this->players->findById($playerId);
+        if ($player === null) {
             return BurnageStatus::ok();
         }
 
-        return $this->checkRule2($season, $phase, $playerId, $teamRank)
-            ?? $this->checkRule3($season, $phase, $round, $teamCode, $teamRank, $playerId)
+        return $this->checkMinimumPoints($season, $phase, $teamCode, $player)
+            ?? $this->checkForeignLimit($season, $phase, $round, $teamCode, $player)
             ?? BurnageStatus::ok();
+    }
+
+    private function checkMinimumPoints(string $season, int $phase, string $teamCode, Player $player): ?BurnageStatus
+    {
+        $minimum = self::minimumPointsForLevel(self::teamLevel($teamCode));
+        if ($minimum === null) {
+            return null;
+        }
+
+        // Points officiels inconnus pour cette saison (joueurs pas encore
+        // resynchronisés) : on ne bloque pas sur une donnée absente.
+        if ($player->bestOfficialSeason !== $season || $player->bestOfficialPoints <= 0) {
+            return null;
+        }
+
+        if ($player->bestOfficialPoints >= $minimum) {
+            return null;
+        }
+
+        if ($phase === 2) {
+            $phase1Appearances = array_filter(
+                $this->appearances->findByPlayerAndPhase($season, 1, $player->id),
+                static fn (MatchAppearance $appearance): bool => $appearance->teamCode === $teamCode
+            );
+            if (count($phase1Appearances) >= self::PROMOTION_MIN_APPEARANCES) {
+                return null;
+            }
+        }
+
+        return new BurnageStatus(
+            true,
+            'min_points',
+            sprintf(
+                /* translators: 1: points minimum de la division, 2: meilleurs points officiels du joueur sur la saison */
+                __('Points minimum non atteints : %1$d points exigés dans cette division, %2$d points au meilleur classement officiel de la saison.', 'tt-team-planner'),
+                $minimum,
+                $player->bestOfficialPoints
+            )
+        );
+    }
+
+    private function checkForeignLimit(string $season, int $phase, int $round, string $teamCode, Player $player): ?BurnageStatus
+    {
+        if (! $player->isForeign) {
+            return null;
+        }
+
+        // Les équipes de l'application comptent 4 joueurs : un seul étranger admis.
+        foreach ($this->compositions->findByTeamAndRound($season, $phase, $round, $teamCode) as $slot) {
+            if ($slot->playerId === null || $slot->playerId === $player->id) {
+                continue;
+            }
+            $teammate = $this->players->findById($slot->playerId);
+            if ($teammate !== null && $teammate->isForeign) {
+                return new BurnageStatus(
+                    true,
+                    'foreign',
+                    __('Une équipe de 4 joueurs ne peut comporter qu\'un seul joueur étranger (hors UE, EEE et Suisse).', 'tt-team-planner')
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private static function teamLevel(string $teamCode): string
+    {
+        foreach ((array) get_option('ttp_teams', []) as $team) {
+            if (is_array($team) && ($team['code'] ?? '') === $teamCode) {
+                return (string) ($team['level'] ?? '');
+            }
+        }
+
+        return '';
     }
 
     private function checkRule2(string $season, int $phase, int $playerId, int $teamRank): ?BurnageStatus
