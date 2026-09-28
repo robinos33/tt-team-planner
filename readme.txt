@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.3.1
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.4.0 =
+* Feature: the player sheet shows the player's photo when one is set in MonClubTT (1.8.0 or later), looked up by licence number. Initials remain the fallback when there is no photo, when MonClubTT is missing or older, or when the image fails to load.
 
 = 1.3.1 =
 * Fix: in the installed app, the bottom navigation bar was pushed below the fold by the height of the Android gesture bar — only a sliver of it remained visible. The bar now keeps clear of the system areas (Android gesture bar, iOS home indicator).
@@ -102,6 +105,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Player sheets now display the photos managed in MonClubTT 1.8.0+.
 
 = 1.3.1 =
 Fixes the bottom navigation bar being cut off below the fold in the installed app on Android.
