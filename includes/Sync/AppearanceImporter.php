@@ -8,6 +8,7 @@ use TT\TeamPlanner\Domain\TeamComposition;
 use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Repository\MatchAppearanceRepository;
 use TT\TeamPlanner\Repository\PlayerRepository;
+use TT\TeamPlanner\Repository\TeamCompositionRepository;
 use TT\TeamPlanner\Repository\ValidatedRoundRepository;
 
 /**
@@ -19,8 +20,9 @@ use TT\TeamPlanner\Repository\ValidatedRoundRepository;
  * Chaque équipe masculine du club est rattachée à l'équipe TT Team Planner
  * de même numéro (« US TALENCE 3 » ↔ code « E3 »). Pour chaque journée jouée,
  * les joueurs de la feuille remplacent les rencontres enregistrées pour cette
- * équipe et cette journée, et la journée est marquée validée : la feuille
- * officielle fait foi sur la saisie manuelle.
+ * équipe et cette journée, remplissent sa composition dans l'application et
+ * la journée est marquée validée : la feuille officielle fait foi sur la
+ * saisie manuelle.
  *
  * Les feuilles ne portent pas le numéro de licence : les joueurs sont
  * rapprochés par nom (« NOM Prénom »), sans accents ni casse.
@@ -33,6 +35,7 @@ final class AppearanceImporter
         private readonly PlayerRepository $players = new PlayerRepository(),
         private readonly MatchAppearanceRepository $appearances = new MatchAppearanceRepository(),
         private readonly ValidatedRoundRepository $validations = new ValidatedRoundRepository(),
+        private readonly TeamCompositionRepository $compositions = new TeamCompositionRepository(),
     ) {}
 
     public static function isAvailable(): bool
@@ -188,6 +191,14 @@ final class AppearanceImporter
         $this->appearances->deleteForRound($season, $phase, $round, $teamCode);
         $this->appearances->recordForRound($season, $phase, $round, $teamCode, $rank, $slots, null);
         $this->validations->markValidated($season, $phase, $round, $teamCode, null);
+
+        // La composition affichée dans l'application reprend la feuille.
+        // setSlot() retire aussi le joueur d'une autre équipe de la même
+        // journée, où il aurait pu être prévu avant le match.
+        $this->compositions->clearTeam($season, $phase, $round, $teamCode);
+        foreach ($slots as $slot) {
+            $this->compositions->setSlot($season, $phase, $round, $teamCode, $slot->slotNumber, (int) $slot->playerId);
+        }
 
         $report['imported'] += count($slots);
         $report['rounds'][]  = $label;
