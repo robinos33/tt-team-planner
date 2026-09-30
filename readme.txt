@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.6.1 =
+* Fix: the FFTT import recorded played matches and validated the round, but left the team line-ups empty in the app. Line-ups are now filled from the match sheet; a player planned in another team for the same round is removed from it.
 
 = 1.6.0 =
 * Feature: played matches are imported twice a day from the official FFTT match sheets, read through MonClubTT 1.9.0+. Each club team is matched to the planner team with the same number, players are recognised by name, and the round is marked as validated. An "Import now" button and a report (bye rounds, sheets without club players, unknown players) are available in the settings.
@@ -117,6 +120,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.6.1 =
+Played rounds imported from the FFTT now show their line-up. Run "Import now" once after updating to fill the rounds already imported.
 
 = 1.6.0 =
 Burnage rules work again: played matches are now imported from the FFTT match sheets (requires MonClubTT 1.9.0) and team forfeits can be declared. Update MonClubTT first.
