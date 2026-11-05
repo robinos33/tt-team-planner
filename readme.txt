@@ -46,6 +46,10 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
+= Who can edit the planner? =
+
+Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the "Planner manager" capability, which administrators and editors have. To let a captain manage the planner without access to the WordPress dashboard, give them the "Planner manager" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
+
 == Changelog ==
 
 = 1.8.0 =
