@@ -11,7 +11,7 @@ Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implé
 - 📋 **Compositions par journée** — assignation des 4 slots joueurs par équipe et par journée
 - 🔥 **Brûlage en temps réel** — calcul automatique des règles 2 et 3 (FFTT II.112.1) à chaque saisie
 - 🔮 **Brûlage projeté** — qui sera brûlé si les journées pas encore jouées se jouent comme composées
-- 📅 **Disponibilités** — chaque joueur renseigne ses disponibilités (dispo / indispo / incertain)
+- 📅 **Disponibilités** — chaque joueur renseigne ses disponibilités (dispo / indispo / incertain) ; l'onglet **Dispos** de la vue Journée montre qui est dispo, placé ou sans réponse
 - 👥 **Effectifs par phase** — ventilation des joueurs dans les équipes pour chaque demi-saison
 - 🔄 **Synchronisation FFTT** — import des licenciés depuis le plugin Mon Club TT
 - 📱 **Application mobile (PWA)** — installable sur iOS et Android, fonctionne hors ligne
