@@ -50,7 +50,7 @@ final class Plugin
         add_action(AppearanceImporter::CRON_HOOK, [$this, 'importAppearances']);
         add_action('init', [AppearanceImporter::class, 'ensureScheduled']);
 
-        // Le gestionnaire planner n'a pas de back-office : admin_init le
+        // La commission équipe n'a pas de back-office : admin_init le
         // renvoie vers le planner, show_admin_bar lui masque la barre.
         (new BackOfficeGuard())->register();
 

@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,9 +48,12 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 = Who can edit the planner? =
 
-Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the "Planner manager" capability, which administrators and editors have. To let a captain manage the planner without access to the WordPress dashboard, give them the "Planner manager" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
+Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
 
 == Changelog ==
+
+= 1.9.1 =
+* Change: the "Gestionnaire planner" role is renamed "Membre commission équipe". Existing role holders keep it, with the same rights.
 
 = 1.9.0 =
 * Security: the players, availability and squads endpoints of the API answered without authentication, exposing each player's name, phone number, email and license number. They now require a logged-in user, like the rest of the API.
@@ -136,6 +139,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.9.1 =
+The "Gestionnaire planner" role is renamed "Membre commission équipe". Nothing to do.
 
 = 1.9.0 =
 Security fix: player contact details were readable without logging in. Update now. Authors and contributors can no longer edit the planner: give them the new "Planner manager" role.
