@@ -30,6 +30,7 @@ define('TTP_TEXT_DOMAIN', 'tt-team-planner');
 // Load all includes (no Composer autoloader needed — compatible with shared hosting)
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- préfixe ttp_ conforme à la convention interne
 $ttp_includes = [
+    'includes/Capabilities.php',
     'includes/Domain/Player.php',
     'includes/Domain/Availability.php',
     'includes/Domain/TeamComposition.php',

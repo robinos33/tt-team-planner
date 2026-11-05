@@ -7,6 +7,9 @@ if (! defined('WP_UNINSTALL_PLUGIN')) {
 
 global $wpdb;
 
+require_once __DIR__ . '/includes/Capabilities.php';
+\TT\TeamPlanner\Capabilities::uninstall();
+
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- préfixe ttp_ conforme à la convention interne
 // Drop custom tables
 $ttp_tables = [

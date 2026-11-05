@@ -11,6 +11,7 @@ class Activator
     public static function activate(): void
     {
         self::checkRequirements();
+        Capabilities::install();
         self::createTables();
         self::seedDefaultOptions();
         AvailabilityReminder::ensureScheduled();
@@ -27,6 +28,7 @@ class Activator
         if (get_option('ttp_db_version') === TTP_VERSION) {
             return;
         }
+        Capabilities::install();
         self::createTables(); // dbDelta() ajoute les colonnes manquantes sans rien casser
         self::seedDefaultOptions();
     }
