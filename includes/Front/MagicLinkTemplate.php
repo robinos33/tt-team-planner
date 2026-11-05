@@ -62,7 +62,7 @@ class MagicLinkTemplate
                 '<p style="font-size:13px;line-height:1.5">' . esc_html__('Demande un nouveau lien à ton club.', 'tt-team-planner') . '</p>' .
                 '</div>';
         } else {
-            $jsUrl      = esc_url(TTP_PLUGIN_URL . 'assets/js/magic-link.js?v=' . TTP_VERSION);
+            $jsUrl      = TTP_PLUGIN_URL . 'assets/js/magic-link.js?v=' . TTP_VERSION;
             $configJson = wp_json_encode([
                 'apiBase' => rest_url('ttp/v1'),
                 'token'   => $token,
@@ -70,7 +70,7 @@ class MagicLinkTemplate
 
             echo '<div id="ttp-magic-app" role="main"></div>';
             echo '<script>window.TTPMagicConfig = ' . $configJson . ';</script>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() + flags anti-XSS
-            echo '<script src="' . $jsUrl . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- page standalone, hors thème
+            echo '<script src="' . esc_url($jsUrl) . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- page standalone, hors thème
         }
 
         echo '</body></html>';
