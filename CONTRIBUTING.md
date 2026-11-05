@@ -106,7 +106,7 @@ Une exception (`// phpcs:ignore <règle> -- <raison>`) nomme la règle et dit po
 
 **JavaScript**
 - Vanilla JS ES5+ (aucun build step, aucun framework)
-- Toutes les modifications dans `assets/js/app.js`
+- L'interface est dans `assets/js/app.js` ; les calculs purs, testables sans navigateur, vont dans un module à part exposé sur `window` (`roster.js`, `share-image.js`), chargé avant `app.js`
 - Le cycle `setState → render → attachEvents` doit rester le seul chemin de mise à jour du DOM
 
 **Commits**
