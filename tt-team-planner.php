@@ -47,6 +47,7 @@ $ttp_includes = [
     'includes/Domain/AppearanceHistory.php',
     'includes/Domain/BurnageStatus.php',
     'includes/Domain/BurnageChecker.php',
+    'includes/Domain/ProjectedAppearanceHistory.php',
     'includes/Repository/PhaseSquadRepository.php',
     'includes/Repository/MatchAppearanceRepository.php',
     'includes/Repository/ValidatedRoundRepository.php',
