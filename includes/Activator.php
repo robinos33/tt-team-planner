@@ -33,10 +33,10 @@ class Activator
 
     private static function checkRequirements(): void
     {
-        if (version_compare(PHP_VERSION, '8.1', '<')) {
+        if (version_compare(PHP_VERSION, '8.2', '<')) {
             deactivate_plugins(plugin_basename(TTP_PLUGIN_FILE));
             wp_die(
-                esc_html__('TT Team Planner nécessite PHP 8.1 ou supérieur.', 'tt-team-planner'),
+                esc_html__('TT Team Planner nécessite PHP 8.2 ou supérieur.', 'tt-team-planner'),
                 esc_html__("Erreur d'activation", 'tt-team-planner'),
                 ['back_link' => true]
             );

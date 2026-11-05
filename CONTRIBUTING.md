@@ -60,7 +60,7 @@ Toutes les contributions sont les bienvenues, en particulier :
 
 ### 1. Prérequis
 
-- PHP 8.1+, WordPress 6.4+
+- PHP 8.2+, WordPress 6.4+
 - Composer, Node.js
 
 ### 2. Installer l'environnement

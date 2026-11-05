@@ -150,7 +150,7 @@ Le statut est recalculé côté serveur après chaque modification de compositio
 
 ## Prérequis
 
-- PHP **8.1** ou supérieur
+- PHP **8.2** ou supérieur
 - WordPress **6.4** ou supérieur
 - Plugin **[Mon Club TT](https://github.com/robinos33/MonClubTT)** pour la synchronisation des licenciés FFTT
 
