@@ -34,6 +34,26 @@ jobs:
       - name: Tests
         run: composer test
 
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Dépendances
+        run: composer install --no-interaction --no-progress
+
+      - name: Lint
+        run: composer lint
+
   jest:
     name: Jest
     runs-on: ubuntu-latest
