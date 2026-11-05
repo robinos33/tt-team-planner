@@ -40,7 +40,7 @@ final class CapabilitiesTest extends TestCase
 
         Functions\expect('add_role')->once()->with(
             'ttp_planner',
-            'Gestionnaire planner',
+            'Membre commission équipe',
             ['read' => true, 'ttp_manage_planner' => true]
         );
 
@@ -75,6 +75,35 @@ final class CapabilitiesTest extends TestCase
             'ttp_planner' => $this->role(),
             'editor'      => $this->role()->shouldNotReceive('add_cap')->getMock(),
         ];
+        $this->roleNames(['ttp_planner' => 'Membre commission équipe']);
+        Functions\expect('add_role')->never();
+
+        Capabilities::install();
+    }
+
+    public function testRenommeLeRoleCreeEn190EnGardantSesDroits(): void
+    {
+        $legacy = $this->role();
+        $legacy->capabilities = ['read' => true, 'ttp_manage_planner' => true, 'upload_files' => true];
+        $this->roles = ['ttp_planner' => $legacy];
+        $this->roleNames(['ttp_planner' => 'Gestionnaire planner']);
+
+        Functions\expect('remove_role')->once()->with('ttp_planner');
+        Functions\expect('add_role')->once()->with(
+            'ttp_planner',
+            'Membre commission équipe',
+            ['read' => true, 'ttp_manage_planner' => true, 'upload_files' => true]
+        );
+
+        Capabilities::install();
+    }
+
+    public function testRespecteUnNomDeRoleChangeALaMain(): void
+    {
+        $this->roles = ['ttp_planner' => $this->role()];
+        $this->roleNames(['ttp_planner' => 'Capitaines']);
+
+        Functions\expect('remove_role')->never();
         Functions\expect('add_role')->never();
 
         Capabilities::install();
@@ -97,6 +126,12 @@ final class CapabilitiesTest extends TestCase
         Functions\expect('current_user_can')->once()->with('ttp_manage_planner')->andReturn(true);
 
         self::assertTrue(Capabilities::canManagePlanner());
+    }
+
+    /** @param array<string, string> $names */
+    private function roleNames(array $names): void
+    {
+        Functions\when('wp_roles')->justReturn((object) ['role_names' => $names]);
     }
 
     private function role(): Mockery\MockInterface

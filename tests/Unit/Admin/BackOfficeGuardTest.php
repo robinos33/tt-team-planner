@@ -36,7 +36,7 @@ final class BackOfficeGuardTest extends TestCase
     /** @return iterable<string, array{array<string, bool>, bool}> */
     public static function utilisateurs(): iterable
     {
-        yield 'gestionnaire planner'        => [['ttp_manage_planner' => true], true];
+        yield 'membre commission équipe'    => [['ttp_manage_planner' => true], true];
         yield 'éditeur gestionnaire'        => [['ttp_manage_planner' => true, 'edit_posts' => true], false];
         yield 'abonné'                      => [[], false];
         yield 'contributeur sans le droit'  => [['edit_posts' => true], false];
