@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace TT\TeamPlanner\Rest;
@@ -104,7 +105,7 @@ class SyncController
 
         if ($errors > 0) {
             /* translators: %d: number of skipped entries */
-            $message .= ' ' . sprintf( __('%d entrée(s) ignorée(s) (données invalides).', 'tt-team-planner'), $errors );
+            $message .= ' ' . sprintf(__('%d entrée(s) ignorée(s) (données invalides).', 'tt-team-planner'), $errors);
         }
 
         return new WP_REST_Response([
