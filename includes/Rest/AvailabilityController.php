@@ -7,6 +7,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use TT\TeamPlanner\Domain\Availability;
 use TT\TeamPlanner\Repository\AvailabilityRepository;
+use TT\TeamPlanner\Capabilities;
 
 class AvailabilityController
 {
@@ -67,6 +68,6 @@ class AvailabilityController
 
     public function canWrite(): bool
     {
-        return current_user_can('edit_posts');
+        return Capabilities::canManagePlanner();
     }
 }

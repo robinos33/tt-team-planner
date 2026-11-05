@@ -33,6 +33,14 @@ final class RoutePermissionsTest extends TestCase
         'POST /magic-links/(?P<token>[a-f0-9]{64})/availability',
     ];
 
+    /** Opérations d'administration, hors du droit de gérer le planner. */
+    private const ADMIN_ROUTES = [
+        'DELETE /appearances/validate', // dévalide une journée
+        'POST /appearances/import',
+        'POST /players/sync',
+        'POST /season/reset',
+    ];
+
     /** @var array<string, callable> « MÉTHODE /route » => permission_callback */
     private array $routes = [];
 
@@ -82,6 +90,41 @@ final class RoutePermissionsTest extends TestCase
         sort($expected);
 
         self::assertSame($expected, $public);
+    }
+
+    /**
+     * Lire demande d'être connecté, écrire demande le droit de gérer le
+     * planner, administrer demande `manage_options`. Une nouvelle route
+     * se range dans l'une des trois cases, ou le test échoue.
+     */
+    public function testChaqueRouteDemandeLeDroitDeSaCategorie(): void
+    {
+        $asked = null;
+        Functions\when('current_user_can')->alias(static function (string $capability) use (&$asked): bool {
+            $asked = $capability;
+            return true;
+        });
+
+        $actual   = [];
+        $expected = [];
+        foreach ($this->routes as $route => $callback) {
+            if (in_array($route, self::PUBLIC_ROUTES, true)) {
+                continue;
+            }
+            $asked = null;
+            $callback();
+            $actual[$route] = $asked;
+
+            $expected[$route] = match (true) {
+                in_array($route, self::ADMIN_ROUTES, true) => 'manage_options',
+                str_starts_with($route, 'GET ')            => 'read',
+                default                                    => 'ttp_manage_planner',
+            };
+        }
+
+        ksort($actual);
+        ksort($expected);
+        self::assertSame($expected, $actual);
     }
 
     /** @return iterable<string, array{string}> */

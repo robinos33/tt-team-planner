@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
 
+use TT\TeamPlanner\Admin\BackOfficeGuard;
 use TT\TeamPlanner\Admin\SettingsPage;
 use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Front\MagicLinkTemplate;
@@ -48,6 +49,10 @@ final class Plugin
         // même principe d'accroche et d'auto-réparation que les relances.
         add_action(AppearanceImporter::CRON_HOOK, [$this, 'importAppearances']);
         add_action('init', [AppearanceImporter::class, 'ensureScheduled']);
+
+        // Le gestionnaire planner n'a pas de back-office : admin_init le
+        // renvoie vers le planner, show_admin_bar lui masque la barre.
+        (new BackOfficeGuard())->register();
 
         if (is_admin()) {
             add_action('admin_menu', [$this, 'registerAdminMenu']);

@@ -11,6 +11,7 @@ use TT\TeamPlanner\Repository\TeamCompositionRepository;
 use TT\TeamPlanner\Repository\TeamForfeitRepository;
 use TT\TeamPlanner\Repository\ValidatedRoundRepository;
 use TT\TeamPlanner\Sync\AppearanceImporter;
+use TT\TeamPlanner\Capabilities;
 
 class MatchAppearanceController
 {
@@ -226,7 +227,7 @@ class MatchAppearanceController
 
     public function canWrite(): bool
     {
-        return current_user_can('edit_posts');
+        return Capabilities::canManagePlanner();
     }
 
     public function canManage(): bool

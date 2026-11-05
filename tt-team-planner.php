@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Plugin Name: TT Team Planner
  * Plugin URI:  https://github.com/ustalencett/tt-team-planner
  * Description: Centralisez les disponibilités et préparez les compositions d'équipes pour votre club de tennis de table.
- * Version:     1.8.0
+ * Version:     1.9.0
  * Requires at least: 6.4
  * Requires PHP: 8.2
  * Author:      US Talence Tennis de Table
@@ -21,7 +21,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('TTP_VERSION',    '1.8.0');
+define('TTP_VERSION',    '1.9.0');
 define('TTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('TTP_PLUGIN_FILE', __FILE__);
@@ -30,6 +30,7 @@ define('TTP_TEXT_DOMAIN', 'tt-team-planner');
 // Load all includes (no Composer autoloader needed — compatible with shared hosting)
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- préfixe ttp_ conforme à la convention interne
 $ttp_includes = [
+    'includes/Capabilities.php',
     'includes/Domain/Player.php',
     'includes/Domain/Availability.php',
     'includes/Domain/TeamComposition.php',
@@ -39,6 +40,7 @@ $ttp_includes = [
     'includes/Repository/TeamCompositionRepository.php',
     'includes/Repository/MagicLinkRepository.php',
     'includes/Admin/SettingsPage.php',
+    'includes/Admin/BackOfficeGuard.php',
     'includes/Domain/PhaseSquad.php',
     'includes/Domain/MatchAppearance.php',
     'includes/Domain/BurnageStatus.php',
