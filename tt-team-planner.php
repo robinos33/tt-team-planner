@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Plugin Name: TT Team Planner
  * Plugin URI:  https://github.com/ustalencett/tt-team-planner
@@ -15,6 +13,8 @@ declare(strict_types=1);
  * Text Domain: tt-team-planner
  * Domain Path: /languages
  */
+
+declare(strict_types=1);
 
 namespace TT\TeamPlanner;
 
