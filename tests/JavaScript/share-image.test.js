@@ -82,8 +82,9 @@ describe('buildModel', () => {
   test('indispo et brûlé mettent la ligne en défaut ; incertain et non renseigné non', () => {
     const m = buildModel(input({
       compositions: fourPlayers('E1', 0),
-      players: [player(1), player(2), player(3), player(4, { is_burned: true })],
-      availabilities: [avail(1, 'unavailable'), avail(2, 'uncertain'), avail(4, 'available')]
+      players: players([1, 2, 3, 4]),
+      availabilities: [avail(1, 'unavailable'), avail(2, 'uncertain'), avail(4, 'available')],
+      contexts: { E1: { burnage: { 4: { burned: true, reason: 'rule2' } }, validated: false }, E2: { burnage: {}, validated: false } }
     }));
     const [indispo, incertain, inconnu, brule] = m.teams[0].slots;
 
@@ -114,16 +115,6 @@ describe('buildModel', () => {
       availabilities: [avail(1, 'available')]
     }));
     expect(m.teams[0].slots[0].chips.map((c) => c.label)).toEqual(['E', 'Mut.', '© Cap.']);
-  });
-
-  test('« Brûlé » n’apparaît qu’une fois quand le joueur l’est aussi pour l’équipe', () => {
-    const m = buildModel(input({
-      compositions: [slot('E1', 1, 1)],
-      players: [player(1, { is_burned: true })],
-      availabilities: [avail(1, 'available')],
-      contexts: { E1: { burnage: { 1: { burned: true, reason: 'rule2' } }, validated: false }, E2: { burnage: {}, validated: false } }
-    }));
-    expect(m.teams[0].slots[0].chips).toEqual([{ label: '🔥 Brûlé', tone: 'danger' }]);
   });
 
   test('statut d’équipe : forfait, validée, complète, incomplète', () => {

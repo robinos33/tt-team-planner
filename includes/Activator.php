@@ -13,6 +13,7 @@ class Activator
         self::checkRequirements();
         Capabilities::install();
         self::createTables();
+        self::dropRetiredColumns();
         self::seedDefaultOptions();
         AvailabilityReminder::ensureScheduled();
         AppearanceImporter::ensureScheduled();
@@ -30,6 +31,7 @@ class Activator
         }
         Capabilities::install();
         self::createTables(); // dbDelta() ajoute les colonnes manquantes sans rien casser
+        self::dropRetiredColumns();
         self::seedDefaultOptions();
     }
 
@@ -68,7 +70,6 @@ class Activator
             is_captain     tinyint(1)          NOT NULL DEFAULT 0,
             is_young       tinyint(1)          NOT NULL DEFAULT 0,
             is_mutation    tinyint(1)          NOT NULL DEFAULT 0,
-            is_burned      tinyint(1)          NOT NULL DEFAULT 0,
             is_active      tinyint(1)          NOT NULL DEFAULT 1,
             notes          text                NOT NULL,
             raw_payload    longtext            NOT NULL,
@@ -186,6 +187,23 @@ class Activator
         }
 
         update_option('ttp_db_version', TTP_VERSION);
+    }
+
+    /**
+     * Supprime les colonnes retirées du schéma : dbDelta() ajoute les
+     * colonnes, il ne les supprime jamais.
+     */
+    private static function dropRetiredColumns(): void
+    {
+        global $wpdb;
+        $players = "{$wpdb->prefix}tttp_players";
+
+        // is_burned : drapeau manuel jamais exposé, remplacé par le brûlage calculé (#24).
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nom de table issu de $wpdb->prefix
+        if ($wpdb->get_var($wpdb->prepare("SHOW COLUMNS FROM {$players} LIKE %s", 'is_burned')) !== null) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- migration de schéma
+            $wpdb->query("ALTER TABLE {$players} DROP COLUMN is_burned");
+        }
     }
 
     private static function seedDefaultOptions(): void
