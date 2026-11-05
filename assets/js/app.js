@@ -600,6 +600,10 @@
       body = '<div style="max-height:58vh;overflow-y:auto;border:1px solid ' + t.bord + ';border-radius:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch">' +
           '<img src="' + esc(sh.url) + '" alt="Compositions de la journée" style="display:block;width:100%">' +
         '</div>' +
+        '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+          '<input data-share-link readonly value="' + esc(sh.link) + '" aria-label="Lien vers la journée" style="flex:1;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid ' + t.bord + ';background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:12px">' +
+          '<button data-action="share-copy-link" style="padding:8px 12px;border-radius:8px;border:1px solid ' + t.bord + ';background:transparent;color:' + t.ink + ';font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">' + (sh.copied ? '✓ Copié' : '🔗 Copier') + '</button>' +
+        '</div>' +
         '<div style="display:flex;gap:8px">' +
           (sh.canShare ? '<button data-action="share-send" style="' + btn + ';border:none;background:' + C.pri + ';color:white">📤 Partager</button>' : '') +
           '<a href="' + esc(sh.url) + '" download="' + esc(sh.name) + '" style="' + btn + ';border:1px solid ' + t.bord + ';background:transparent;color:' + t.ink + '">⬇️ Télécharger</a>' +
@@ -1773,7 +1777,9 @@
       var file = new File([blob], name, { type: 'image/png' });
       var canShare = false;
       try { canShare = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) {}
-      setState({ share: { url: URL.createObjectURL(blob), file: file, name: name, canShare: canShare, title: 'Compos J' + round } });
+      // Lien vers la journée, joint au partage : un lien dessiné dans l'image ne serait pas cliquable.
+      var link = w.location.href.split('#')[0] + screenToHash({ screen: 'journee', journeeN: round });
+      setState({ share: { url: URL.createObjectURL(blob), file: file, name: name, canShare: canShare, title: 'Compos J' + round, link: link } });
     }).catch(function (err) {
       if (seq !== shareSeq) return;
       setState({ share: { error: (err && err.message) || String(err) } });
@@ -1785,10 +1791,25 @@
   function sendShare() {
     var sh = S.share;
     if (!sh || !sh.file) return;
-    navigator.share({ files: [sh.file], title: sh.title }).catch(function (err) {
+    navigator.share({ files: [sh.file], title: sh.title, text: sh.title + ' : ' + sh.link }).catch(function (err) {
       if (err && err.name === 'AbortError') return; // partage annulé
       alert('Partage impossible : ' + (err && err.message) + '\nUtilisez « Télécharger ».');
     });
+  }
+
+  // Sans partage natif (ordinateur, « Télécharger »), le lien suit l'image par
+  // copier-coller. Presse-papiers refusé : le lien reste sélectionné à l'écran.
+  function copyShareLink() {
+    var sh = S.share;
+    if (!sh || !sh.link) return;
+    var selectLink = function () {
+      var input = root.querySelector('[data-share-link]');
+      if (input) input.select();
+    };
+    if (!navigator.clipboard) { selectLink(); return; }
+    navigator.clipboard.writeText(sh.link).then(function () {
+      if (S.share === sh) setState({ share: Object.assign({}, sh, { copied: true }) });
+    }, selectLink);
   }
 
   function closeShare() {
@@ -1902,6 +1923,7 @@
       case 'bulk-result-close':  setState({ bulkResult: null }); break;
       case 'share-open':         openShare(); break;
       case 'share-send':         sendShare(); break;
+      case 'share-copy-link':    copyShareLink(); break;
       case 'share-close':        closeShare(); break;
     }
   }
