@@ -121,10 +121,10 @@ docs(readme): ajoute les captures d'écran
 Toute nouvelle fonctionnalité doit être couverte par des tests :
 
 ```bash
-docker run --rm -v "$PWD":/app -w /app php:8.1-cli vendor/bin/phpunit
+docker run --rm -v "$PWD":/app -w /app php:8.2-cli vendor/bin/phpunit
 ```
 
-Les tests PHP se trouvent dans `tests/Unit/` et ne démarrent pas WordPress : les fonctions WordPress sont simulées avec [Brain Monkey](https://giuseppe-mazzapica.gitbook.io/brain-monkey), et les repositories remplacés par des doublures en mémoire (voir `tests/Unit/Domain/BurnageCheckerTest.php`). La CI les lance sur chaque PR, en PHP 8.1 et 8.4.
+Les tests PHP se trouvent dans `tests/Unit/` et ne démarrent pas WordPress : les fonctions WordPress sont simulées avec [Brain Monkey](https://giuseppe-mazzapica.gitbook.io/brain-monkey), et les repositories remplacés par des doublures en mémoire (voir `tests/Unit/Domain/BurnageCheckerTest.php`). La CI les lance sur chaque PR, en PHP 8.2 et 8.4.
 
 Pas encore de tests JavaScript.
 
