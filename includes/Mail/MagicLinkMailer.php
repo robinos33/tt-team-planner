@@ -164,9 +164,9 @@ class MagicLinkMailer
             );
         }
 
-        /* translators: nombre de jours de validité du lien */
         $validity = sprintf(
             esc_html(
+                /* translators: %d : nombre de jours de validité du lien */
                 _n(
                     'Ce lien t\'est personnel et reste actif %d jour.',
                     'Ce lien t\'est personnel et reste actif %d jours.',
@@ -386,12 +386,7 @@ HTML;
         return sprintf(
             /* translators: 1: prénom, 2: phrase d'introduction, 3: liste des journées, 4: lien personnel, 5: durée en jours, 6: nom du club */
             __(
-                "Salut %1\$s,\n\n" .
-                "%2\$s\n" .
-                "%3\$s\n" .
-                "Ton lien personnel :\n%4\$s\n\n" .
-                "Ce lien n'est valable que pour toi et reste actif pendant %5\$d jours. Ne le transfère pas.\n\n" .
-                "— %6\$s",
+                "Salut %1\$s,\n\n%2\$s\n%3\$s\nTon lien personnel :\n%4\$s\n\nCe lien n'est valable que pour toi et reste actif pendant %5\$d jours. Ne le transfère pas.\n\n— %6\$s",
                 'tt-team-planner'
             ),
             $firstName,
