@@ -1,0 +1,138 @@
+name: Release
+
+# Publie une release à chaque merge sur main qui change la version du plugin.
+# La version de tt-team-planner.php est la source de vérité : si le tag
+# v<version> a déjà sa release, le job s'arrête sans rien faire. Une PR qui
+# ne change pas la version ne publie donc rien.
+#
+# Titre et notes viennent du bloc release de la PR mergée :
+#
+#   <!-- release: Compositions importées de la FFTT -->
+#   ## Correction
+#   …
+#   <!-- /release -->
+#
+# Sans bloc (push direct, PR sans section), on se rabat sur l'entrée
+# correspondante du changelog de readme.txt, avec le tag seul pour titre.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag + release GitHub + ZIP
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lire et contrôler la version
+        id: version
+        run: |
+          header=$(sed -n 's/^ \* Version: *//p' tt-team-planner.php | tr -d '\r ')
+          constant=$(sed -n "s/^define('TTP_VERSION', *'\([^']*\)');.*/\1/p" tt-team-planner.php)
+          stable=$(sed -n 's/^Stable tag: *//p' readme.txt | tr -d '\r ')
+
+          if [ -z "$header" ] || [ "$header" != "$constant" ] || [ "$header" != "$stable" ]; then
+            echo "::error::Versions désalignées — en-tête: '$header', TTP_VERSION: '$constant', Stable tag: '$stable'"
+            exit 1
+          fi
+
+          echo "version=$header" >> "$GITHUB_OUTPUT"
+          echo "tag=v$header" >> "$GITHUB_OUTPUT"
+
+      - name: Release déjà publiée ?
+        id: exists
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if gh release view "$TAG" -R "$REPO" > /dev/null 2>&1; then
+            echo "Release $TAG déjà publiée : rien à faire."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Préparer titre et notes
+        if: steps.exists.outputs.skip == 'false'
+        id: notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # PR associée au commit poussé (merge, squash ou rebase).
+          gh api "repos/$REPO/commits/$SHA/pulls" --jq '.[0].body // ""' \
+            | tr -d '\r' > pr-body.md || : > pr-body.md
+
+          subtitle=$(sed -n 's/^<!-- release: *\(.*[^ ]\) *-->$/\1/p' pr-body.md | head -n 1)
+          awk '/^<!-- release:/ { inside = 1; next }
+               /^<!-- \/release -->/ { inside = 0 }
+               inside' pr-body.md > notes.md
+
+          if [ -s notes.md ]; then
+            echo "Notes reprises du bloc release de la PR."
+          else
+            echo "::warning::Pas de bloc release dans la PR : notes reprises du changelog de readme.txt."
+            subtitle=""
+            awk -v heading="= $VERSION =" '
+              $0 == heading { inside = 1; next }
+              inside && /^=/ { exit }
+              inside' readme.txt | tr -d '\r' > notes.md
+          fi
+
+          if [ ! -s notes.md ]; then
+            echo "::error::Aucune note trouvée pour $TAG (ni bloc release dans la PR, ni entrée '= $VERSION =' dans readme.txt)."
+            exit 1
+          fi
+
+          # Lien de comparaison avec la release précédente, comme à la main.
+          previous=$(gh release list -R "$REPO" -L 1 --json tagName --jq '.[0].tagName // ""')
+          if [ -n "$previous" ]; then
+            printf '\n**Changelog complet** : https://github.com/%s/compare/%s...%s\n' \
+              "$REPO" "$previous" "$TAG" >> notes.md
+          fi
+
+          if [ -n "$subtitle" ]; then
+            echo "title=$TAG — $subtitle" >> "$GITHUB_OUTPUT"
+          else
+            echo "title=$TAG" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Créer le tag et la release
+        if: steps.exists.outputs.skip == 'false'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          TITLE: ${{ steps.notes.outputs.title }}
+        run: |
+          gh release create "$TAG" -R "$REPO" \
+            --title "$TITLE" \
+            --notes-file notes.md \
+            --target "$SHA"
+
+      # Une release créée avec GITHUB_TOKEN ne déclenche pas release-zip.yml
+      # (GitHub n'enchaîne pas les workflows sur ses propres événements) :
+      # le ZIP est construit et attaché ici.
+      - name: Construire et attacher le ZIP
+        if: steps.exists.outputs.skip == 'false'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git archive --worktree-attributes \
+            --prefix=tt-team-planner/ \
+            -o tt-team-planner.zip \
+            HEAD
+          gh release upload "$TAG" tt-team-planner.zip -R "$REPO" --clobber

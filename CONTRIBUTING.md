@@ -127,20 +127,24 @@ Les tests PHP se trouvent dans `tests/`, organisés en `Unit/` et `Integration/`
 
 ## Publier une release
 
-Réservé aux mainteneurs.
+Réservé aux mainteneurs. La release est publiée **au merge de la PR**, par `.github/workflows/release.yml`.
 
-1. Bumper la version à trois endroits (doivent rester synchronisés) :
+1. Dans la PR, passer la version au même numéro aux trois endroits (sinon le workflow échoue) :
    - `tt-team-planner.php` (en-tête `Version:` + `define('TTP_VERSION', ...)`)
    - `readme.txt` (`Stable tag:` + entrée `== Changelog ==` + `== Upgrade Notice ==`)
-2. Commit, push sur `main`.
-3. Tag et push le tag :
-   ```bash
-   git tag v1.0.5
-   git push origin v1.0.5
+2. Dans la description de la PR, écrire les notes de release destinées au club entre deux balises :
+   ```markdown
+   <!-- release: Compositions importées de la FFTT -->
+   ## Correction
+   …
+   <!-- /release -->
    ```
-4. Créer une [release GitHub](https://github.com/robinos33/tt-team-planner/releases/new) sur ce tag, avec le contenu du changelog en description.
+   La release s'intitulera « v1.6.1 — Compositions importées de la FFTT ». Sans ce bloc, les notes reprennent l'entrée du changelog de `readme.txt` et le titre se limite au tag.
+3. Merger. Le workflow crée le tag, la release (avec un lien de comparaison vers la précédente) et y attache le ZIP du plugin.
 
-À la publication de la release, `.github/workflows/release-zip.yml` construit automatiquement un ZIP propre (via `git archive`, en excluant les fichiers listés dans `.gitattributes` : tests, composer, phpcs, etc.) et l'attache à la release — prêt à être téléversé depuis **Extensions → Ajouter → Téléverser une extension** dans wp-admin.
+Une PR qui ne change pas la version ne publie rien. Pour rejouer une release qui a échoué : *Actions → Release → Run workflow* sur `main`.
+
+Le ZIP est construit via `git archive`, en excluant les fichiers listés dans `.gitattributes` (tests, composer, phpcs, etc.) — prêt à être téléversé depuis **Extensions → Ajouter → Téléverser une extension** dans wp-admin. Une release créée à la main depuis l'interface GitHub reçoit aussi son ZIP, via `.github/workflows/release-zip.yml`.
 
 Pas de publication sur WordPress.org (pas de dépôt SVN) : la release GitHub est la seule source de distribution.
 
