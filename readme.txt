@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,10 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the "Planner manager" capability, which administrators and editors have. To let a captain manage the planner without access to the WordPress dashboard, give them the "Planner manager" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
 
 == Changelog ==
+
+= 1.8.1 =
+* Security: the players, availability and squads endpoints of the API answered without authentication, exposing each player's name, phone number, email and license number. They now require a logged-in user, like the rest of the API.
+* Feature: a "Planner manager" role lets someone manage the planner from the front end without any access to the WordPress dashboard. Editing the planner now requires its dedicated capability, given to administrators and editors on update; authors and contributors lose write access.
 
 = 1.8.0 =
 * Feature: a "Share line-ups" button in the round view builds a single image of every team's line-up for that round, to discuss in the captains' group chat. Each team shows its status (complete, incomplete, validated, forfeit) and each player their points and the signals that matter: unavailable, uncertain or unanswered, burned (with the reason), foreign, transfer, captain. Players who are unavailable or burned are highlighted in red, and empty slots in yellow. The players available but not selected are listed at the bottom.
@@ -132,6 +136,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.8.1 =
+Security fix: player contact details were readable without logging in. Update now. Authors and contributors can no longer edit the planner: give them the new "Planner manager" role.
 
 = 1.8.0 =
 Share all of a round's line-ups as one image, from the round view.
