@@ -44,6 +44,7 @@ $ttp_includes = [
     'includes/Admin/BackOfficeGuard.php',
     'includes/Domain/PhaseSquad.php',
     'includes/Domain/MatchAppearance.php',
+    'includes/Domain/AppearanceHistory.php',
     'includes/Domain/BurnageStatus.php',
     'includes/Domain/BurnageChecker.php',
     'includes/Repository/PhaseSquadRepository.php',
