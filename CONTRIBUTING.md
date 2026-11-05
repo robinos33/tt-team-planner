@@ -95,12 +95,14 @@ git checkout -b fix/mon-correctif
 **PHP**
 - PSR-4 (namespace `TT\TeamPlanner\`)
 - Typage strict (`declare(strict_types=1)`)
-- Standards WordPress (phpcs avec le ruleset fourni)
+- Mise en forme PSR-12, et règles WordPress de sécurité, de SQL et d'API (phpcs, ruleset `phpcs.xml`)
 
 ```bash
-composer lint       # vérifier
-composer lint:fix   # corriger automatiquement
+docker run --rm -v "$PWD":/app -w /app composer:2.8 lint       # vérifier
+docker run --rm -v "$PWD":/app -w /app composer:2.8 lint:fix   # corriger automatiquement
 ```
+
+Une exception (`// phpcs:ignore <règle> -- <raison>`) nomme la règle et dit pourquoi elle ne s'applique pas. La CI lance le lint sur chaque PR.
 
 **JavaScript**
 - Vanilla JS ES5+ (aucun build step, aucun framework)
@@ -126,7 +128,12 @@ docker run --rm -v "$PWD":/app -w /app php:8.2-cli vendor/bin/phpunit
 
 Les tests PHP se trouvent dans `tests/Unit/` et ne démarrent pas WordPress : les fonctions WordPress sont simulées avec [Brain Monkey](https://giuseppe-mazzapica.gitbook.io/brain-monkey), et les repositories remplacés par des doublures en mémoire (voir `tests/Unit/Domain/BurnageCheckerTest.php`). La CI les lance sur chaque PR, en PHP 8.2 et 8.4.
 
-Pas encore de tests JavaScript.
+Les tests JavaScript (Jest + jsdom) se trouvent dans `tests/JavaScript/`, et la CI les lance aussi :
+
+```bash
+npm install
+npm test
+```
 
 ### 6. Ouvrir la pull request
 
