@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,11 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.8.0 =
+* Feature: a "Share line-ups" button in the round view builds a single image of every team's line-up for that round, to discuss in the captains' group chat. Each team shows its status (complete, incomplete, validated, forfeit) and each player their points and the signals that matter: unavailable, uncertain or unanswered, burned (with the reason), foreign, transfer, captain. Players who are unavailable or burned are highlighted in red, and empty slots in yellow. The players available but not selected are listed at the bottom.
+* Feature: burnage and validation are checked for every team, not only the one open in the round view. When a team's burnage could not be loaded (offline, no cache), the image says so instead of showing no warnings.
+* Feature: on phones, the image opens the share sheet (WhatsApp, etc.); everywhere, it can be downloaded as a PNG.
 
 = 1.7.0 =
 * Changed: the plugin now requires PHP 8.2, the version already required by MonClubTT. Activation is refused on an older PHP.
@@ -123,6 +128,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Share all of a round's line-ups as one image, from the round view.
 
 = 1.7.0 =
 Requires PHP 8.2 or later. Check your hosting PHP version before updating.
