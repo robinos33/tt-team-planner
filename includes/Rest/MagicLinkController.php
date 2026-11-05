@@ -12,6 +12,7 @@ use TT\TeamPlanner\Mail\MagicLinkMailer;
 use TT\TeamPlanner\Repository\AvailabilityRepository;
 use TT\TeamPlanner\Repository\MagicLinkRepository;
 use TT\TeamPlanner\Repository\PlayerRepository;
+use TT\TeamPlanner\Capabilities;
 
 /**
  * Endpoints publics accessibles via un lien magique (token à usage personnel,
@@ -142,6 +143,6 @@ class MagicLinkController
 
     public function canWrite(): bool
     {
-        return current_user_can('edit_posts');
+        return Capabilities::canManagePlanner();
     }
 }

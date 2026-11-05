@@ -8,6 +8,7 @@ use WP_REST_Response;
 use TT\TeamPlanner\Repository\PhaseSquadRepository;
 use TT\TeamPlanner\Repository\AvailabilityRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
+use TT\TeamPlanner\Capabilities;
 
 class PhaseSquadController
 {
@@ -186,6 +187,6 @@ class PhaseSquadController
 
     public function canWrite(): bool
     {
-        return current_user_can('edit_posts');
+        return Capabilities::canManagePlanner();
     }
 }

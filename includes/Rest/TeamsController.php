@@ -8,6 +8,7 @@ use WP_REST_Response;
 use TT\TeamPlanner\Repository\PlayerRepository;
 use TT\TeamPlanner\Repository\AvailabilityRepository;
 use TT\TeamPlanner\Repository\TeamCompositionRepository;
+use TT\TeamPlanner\Capabilities;
 
 class TeamsController
 {
@@ -90,6 +91,6 @@ class TeamsController
 
     public function canWrite(): bool
     {
-        return current_user_can('edit_posts');
+        return Capabilities::canManagePlanner();
     }
 }
