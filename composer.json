@@ -11,27 +11,23 @@
         "mockery/mockery": "^1.6",
         "brain/monkey": "^2.6"
     },
-    "autoload": {
-        "psr-4": {
-            "VibeKanban\\TableauEquipes\\": "src/"
-        }
-    },
     "autoload-dev": {
         "psr-4": {
-            "VibeKanban\\TableauEquipes\\Tests\\": "tests/"
+            "TT\\TeamPlanner\\Tests\\": "tests/",
+            "TT\\TeamPlanner\\": "includes/"
         }
     },
     "scripts": {
-        "test": "phpunit",
-        "test:coverage": "phpunit --coverage-html coverage",
-        "test:unit": "phpunit --testsuite=unit",
-        "test:integration": "phpunit --testsuite=integration"
+        "test": "phpunit"
     },
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true,
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "8.1.0"
         }
     }
 }
