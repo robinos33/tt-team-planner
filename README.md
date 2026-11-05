@@ -10,6 +10,7 @@ Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implé
 
 - 📋 **Compositions par journée** — assignation des 4 slots joueurs par équipe et par journée
 - 🔥 **Brûlage en temps réel** — calcul automatique des règles 2 et 3 (FFTT II.112.1) à chaque saisie
+- 🔮 **Brûlage projeté** — qui sera brûlé si les journées pas encore jouées se jouent comme composées
 - 📅 **Disponibilités** — chaque joueur renseigne ses disponibilités (dispo / indispo / incertain)
 - 👥 **Effectifs par phase** — ventilation des joueurs dans les équipes pour chaque demi-saison
 - 🔄 **Synchronisation FFTT** — import des licenciés depuis le plugin Mon Club TT
@@ -106,7 +107,7 @@ Base : `/wp-json/ttp/v1/`
 | `GET` | `/appearances/validate` | Statut de validation d'une journée |
 | `POST` | `/appearances/validate` | Valider une journée (génère les apparences) |
 | `DELETE` | `/appearances/validate` | Annuler une validation |
-| `GET` | `/burnage` | Statut de brûlage pour une liste de joueurs |
+| `GET` | `/burnage` | Statut de brûlage pour une liste de joueurs, réel et projeté |
 | `POST` | `/season/reset` | Réinitialisation d'une saison |
 
 ---
@@ -142,9 +143,21 @@ Le rang d'une équipe est déduit de son code (ex. `T1` → rang 1, `T3` → ran
 |-------|---------------|
 | 🔥 Brûlé | Règle 2 déclenchée |
 | ⚠ Limite J2 | Règle 3 déclenchée |
+| 🔮 … si compos jouées | Brûlage projeté (voir ci-dessous) |
 | Fond rouge + bordure épaisse | Joueur brûlé ou indisponible dans un slot |
+| Fond orange + bordure épaisse | Joueur qui serait brûlé si les compos prévues se jouent |
 
 Le statut est recalculé côté serveur après chaque modification de composition (invalidation du cache local + rechargement via `/burnage`).
+
+### Brûlage projeté
+
+Le brûlage réel ne compte que les journées **validées** (feuille FFTT importée ou validation manuelle). Pour préparer la J4 avant que la J3 soit jouée, l'application calcule aussi un brûlage **projeté** : les compositions des journées précédentes encore non validées y comptent comme si elles avaient été jouées.
+
+- Un joueur brûlé pour de vrai garde son badge rouge. Un joueur qui ne le serait qu'en projection porte un badge orange 🔮 : c'est un avertissement, pas une interdiction.
+- Une équipe validée à une journée garde ses rencontres enregistrées : la feuille fait foi sur la composition. Une équipe déclarée forfait ne projette rien.
+- Modifier une composition met à jour la projection des journées suivantes.
+
+Côté API, `/burnage` renvoie pour chaque joueur `burned`, `reason` et `detail` (journées validées seulement), et `projected` : `{reason, detail}` si le joueur n'est pas brûlé mais le serait en projection, sinon `null`.
 
 ---
 

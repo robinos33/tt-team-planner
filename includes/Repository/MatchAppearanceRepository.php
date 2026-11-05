@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace TT\TeamPlanner\Repository;
 
+use TT\TeamPlanner\Domain\AppearanceHistory;
 use TT\TeamPlanner\Domain\MatchAppearance;
 use TT\TeamPlanner\Domain\TeamComposition;
 
-class MatchAppearanceRepository
+class MatchAppearanceRepository implements AppearanceHistory
 {
     private const CACHE_GROUP = 'ttp_appearances';
 
