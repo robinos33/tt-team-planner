@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 
 /**
  * Plugin Name: TT Team Planner
@@ -15,13 +14,15 @@ declare(strict_types=1);
  * Domain Path: /languages
  */
 
-namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+declare(strict_types=1);
+
+namespace TT\TeamPlanner;
 
 if (! defined('ABSPATH')) {
     exit;
 }
 
-define('TTP_VERSION',    '1.9.1');
+define('TTP_VERSION', '1.9.1');
 define('TTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('TTP_PLUGIN_FILE', __FILE__);
@@ -75,7 +76,7 @@ foreach ($ttp_includes as $file) {
 }
 // phpcs:enable
 
-register_activation_hook(__FILE__,   [Activator::class,   'activate']);
+register_activation_hook(__FILE__, [Activator::class, 'activate']);
 register_deactivation_hook(__FILE__, [Deactivator::class, 'deactivate']);
 
 Plugin::getInstance();

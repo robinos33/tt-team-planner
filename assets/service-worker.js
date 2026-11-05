@@ -5,8 +5,8 @@
  *   - Everything else: network-first, no cache
  */
 
-var CACHE_SHELL  = 'ttp-shell-v8';
-var CACHE_API    = 'ttp-api-v8';
+var CACHE_SHELL  = 'ttp-shell-v9';
+var CACHE_API    = 'ttp-api-v9';
 
 // Chemin du plugin, passé par PHP à l'enregistrement : le SW a désormais un
 // scope global, il ne doit mettre en cache que ses propres assets.

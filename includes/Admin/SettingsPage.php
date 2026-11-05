@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Admin; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Admin;
 
 use TT\TeamPlanner\Repository\PlayerRepository;
 
@@ -19,12 +20,12 @@ class SettingsPage
         add_action('admin_post_ttp_create_front_page', [$this, 'handleCreateFrontPage']);
 
         register_setting('ttp_settings', 'ttp_club_name', ['sanitize_callback' => 'sanitize_text_field']);
-        register_setting('ttp_settings', 'ttp_pwa_enabled',               ['sanitize_callback' => [$this, 'sanitizeCheckbox']]);
-        register_setting('ttp_settings', 'ttp_teams',                     ['sanitize_callback' => [$this, 'sanitizeTeams']]);
+        register_setting('ttp_settings', 'ttp_pwa_enabled', ['sanitize_callback' => [$this, 'sanitizeCheckbox']]);
+        register_setting('ttp_settings', 'ttp_teams', ['sanitize_callback' => [$this, 'sanitizeTeams']]);
         register_setting('ttp_settings', 'ttp_sms_template_availability', ['sanitize_callback' => 'sanitize_textarea_field']);
         register_setting('ttp_settings', 'ttp_sms_template_confirmation', ['sanitize_callback' => 'sanitize_textarea_field']);
-        register_setting('ttp_settings', 'ttp_journee_dates_p1',          ['sanitize_callback' => [$this, 'sanitizeDates']]);
-        register_setting('ttp_settings', 'ttp_journee_dates_p2',          ['sanitize_callback' => [$this, 'sanitizeDates']]);
+        register_setting('ttp_settings', 'ttp_journee_dates_p1', ['sanitize_callback' => [$this, 'sanitizeDates']]);
+        register_setting('ttp_settings', 'ttp_journee_dates_p2', ['sanitize_callback' => [$this, 'sanitizeDates']]);
     }
 
     public function sanitizeCheckbox(mixed $raw): string
@@ -218,15 +219,16 @@ class SettingsPage
         echo '<h2>' . esc_html__('Équipes', 'tt-team-planner') . '</h2>';
         echo '<p class="description">' . esc_html__('Définissez les équipes du club. Le code est utilisé pour grouper les joueurs par équipe habituelle.', 'tt-team-planner') . '</p>';
 
-        echo '<datalist id="ttp-levels-list">';
-        foreach ([
+        $levels = [
             'Pro A', 'Pro B',
             'Nationale 1', 'Nationale 2', 'Nationale 3',
             'Pré-Nationale',
             'Régionale 1', 'Régionale 2', 'Régionale 3',
             'Pré-Régionale',
             'Départementale 1', 'Départementale 2', 'Départementale 3', 'Départementale 4', 'Départementale 5',
-        ] as $lvl) {
+        ];
+        echo '<datalist id="ttp-levels-list">';
+        foreach ($levels as $lvl) {
             echo '<option value="' . esc_attr($lvl) . '">';
         }
         echo '</datalist>';

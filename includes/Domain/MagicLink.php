@@ -1,15 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Domain;
 
 final class MagicLink
 {
     public function __construct(
-        public readonly int     $id,
-        public readonly int     $playerId,
-        public readonly string  $season,
-        public readonly string  $expiresAt,
+        public readonly int $id,
+        public readonly int $playerId,
+        public readonly string $season,
+        public readonly string $expiresAt,
         public readonly ?string $usedAt,
     ) {}
 

@@ -1,29 +1,30 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Domain;
 
 final class Player
 {
     public function __construct(
-        public readonly int     $id,
-        public readonly string  $externalId,
-        public readonly string  $firstName,
-        public readonly string  $lastName,
-        public readonly string  $licenseNumber,
-        public readonly string  $phone,
-        public readonly string  $email,
-        public readonly int     $ranking,
-        public readonly string  $usualTeam,
-        public readonly bool    $isForeign,
-        public readonly bool    $isCaptain,
-        public readonly bool    $isYoung,
-        public readonly bool    $isMutation,
-        public readonly string  $notes,
+        public readonly int $id,
+        public readonly string $externalId,
+        public readonly string $firstName,
+        public readonly string $lastName,
+        public readonly string $licenseNumber,
+        public readonly string $phone,
+        public readonly string $email,
+        public readonly int $ranking,
+        public readonly string $usualTeam,
+        public readonly bool $isForeign,
+        public readonly bool $isCaptain,
+        public readonly bool $isYoung,
+        public readonly bool $isMutation,
+        public readonly string $notes,
         public readonly ?string $syncedAt,
-        public readonly bool    $isActive = true,
-        public readonly int     $bestOfficialPoints = 0,
-        public readonly string  $bestOfficialSeason = '',
+        public readonly bool $isActive = true,
+        public readonly int $bestOfficialPoints = 0,
+        public readonly string $bestOfficialSeason = '',
     ) {}
 
     public function fullName(): string

@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Domain;
 
 final class Availability
 {
@@ -18,11 +19,11 @@ final class Availability
     ];
 
     public function __construct(
-        public readonly int    $id,
-        public readonly int    $playerId,
+        public readonly int $id,
+        public readonly int $playerId,
         public readonly string $season,
-        public readonly int    $phase,
-        public readonly int    $round,
+        public readonly int $phase,
+        public readonly int $round,
         public readonly string $status,
         public readonly string $comment,
     ) {}

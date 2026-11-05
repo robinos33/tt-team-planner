@@ -33,3 +33,42 @@ jobs:
 
       - name: Tests
         run: composer test
+
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Dépendances
+        run: composer install --no-interaction --no-progress
+
+      - name: Lint
+        run: composer lint
+
+  jest:
+    name: Jest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Pas de package-lock.json versionné : npm install plutôt que npm ci.
+      - name: Dépendances
+        run: npm install --no-audit --no-fund
+
+      - name: Tests
+        run: npm test

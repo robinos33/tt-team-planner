@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 if (! defined('WP_UNINSTALL_PLUGIN')) {
@@ -25,7 +26,7 @@ $ttp_tables = [
 
 foreach ($ttp_tables as $ttp_table) {
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DROP TABLE on uninstall, no caching applicable
-    $wpdb->query( "DROP TABLE IF EXISTS `{$ttp_table}`" );
+    $wpdb->query("DROP TABLE IF EXISTS `{$ttp_table}`");
 }
 
 // Remove plugin options
@@ -47,6 +48,6 @@ $ttp_options = [
 ];
 
 foreach ($ttp_options as $ttp_option) {
-    delete_option( $ttp_option );
+    delete_option($ttp_option);
 }
 // phpcs:enable

@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner;
 
 use TT\TeamPlanner\Admin\BackOfficeGuard;
 use TT\TeamPlanner\Admin\SettingsPage;
@@ -36,8 +37,8 @@ final class Plugin
     private function __construct()
     {
         add_action('plugins_loaded', [Activator::class, 'maybeUpgrade']);
-        add_action('init',           [$this, 'init']);
-        add_action('rest_api_init',  [$this, 'registerRestRoutes']);
+        add_action('init', [$this, 'init']);
+        add_action('rest_api_init', [$this, 'registerRestRoutes']);
 
         // Relances de disponibilité : le handler doit être accroché à chaque
         // chargement (WP-Cron s'exécute dans une requête où rien d'autre du

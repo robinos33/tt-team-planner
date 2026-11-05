@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Rest; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Rest;
 
 use WP_REST_Request;
 use WP_REST_Response;
@@ -33,7 +34,6 @@ class TeamsController
             'callback'            => [$this, 'clearSlot'],
             'permission_callback' => [$this, 'canWrite'],
         ]);
-
     }
 
     public function getCompositions(WP_REST_Request $request): WP_REST_Response

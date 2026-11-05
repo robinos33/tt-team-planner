@@ -1,7 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Rest; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Rest;
 
 use WP_REST_Request;
 use WP_REST_Response;
@@ -104,7 +105,7 @@ class SyncController
 
         if ($errors > 0) {
             /* translators: %d: number of skipped entries */
-            $message .= ' ' . sprintf( __('%d entrée(s) ignorée(s) (données invalides).', 'tt-team-planner'), $errors );
+            $message .= ' ' . sprintf(__('%d entrée(s) ignorée(s) (données invalides).', 'tt-team-planner'), $errors);
         }
 
         return new WP_REST_Response([

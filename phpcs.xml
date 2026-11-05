@@ -8,15 +8,36 @@
     <exclude-pattern>tests/*</exclude-pattern>
 
     <arg name="extensions" value="php"/>
+    <arg value="sp"/>
 
-    <!-- WordPress Extra ruleset -->
-    <rule ref="WordPress-Extra">
-        <!-- PSR-4 namespace TT\TeamPlanner is our plugin prefix — accepted deviation -->
-        <exclude name="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound"/>
+    <!-- Mise en forme : PSR-12, le style dans lequel le code est écrit.
+         Les règles de mise en forme de WordPress (tabulations, espaces dans
+         les parenthèses, array()) n'ont jamais été appliquées ici. -->
+    <rule ref="PSR12">
+        <!-- Les requêtes SQL et les phpcs:ignore font des lignes longues. -->
+        <exclude name="Generic.Files.LineLength"/>
+        <!-- Garde « ) {} » pour un constructeur à promotion de propriétés,
+             comme le permet PER-CS 2.0, successeur de PSR-12. -->
+        <exclude name="Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore"/>
+    </rule>
 
+    <!-- Le fichier principal et uninstall.php sont des points d'entrée WordPress :
+         ils déclarent et exécutent à la fois. -->
+    <rule ref="PSR1.Files.SideEffects.FoundWithSymbols">
+        <exclude-pattern>tt-team-planner.php</exclude-pattern>
+        <exclude-pattern>uninstall.php</exclude-pattern>
+    </rule>
+
+    <!-- Règles WordPress qui portent du sens : sécurité, SQL, API WordPress. -->
+    <rule ref="WordPress.Security"/>
+    <rule ref="WordPress.DB"/>
+    <rule ref="WordPress.WP">
         <!-- StandaloneTemplate bypasses WP template system intentionally (app shell) -->
         <exclude name="WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet"/>
         <exclude name="WordPress.WP.EnqueuedResources.NonEnqueuedScript"/>
+    </rule>
+    <rule ref="WordPress.PHP">
+        <exclude name="WordPress.PHP.YodaConditions"/>
     </rule>
 
     <!-- Declare acceptable prefixes: TT\TeamPlanner (namespace) and ttp (functions/variables) -->
@@ -24,8 +45,8 @@
         <properties>
             <property name="prefixes" type="array">
                 <element value="TT\TeamPlanner"/>
-                <element value="ttp"/>
-                <element value="TTP"/>
+                <element value="ttp_"/>
+                <element value="TTP_"/>
             </property>
         </properties>
     </rule>

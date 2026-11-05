@@ -1,21 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
-namespace TT\TeamPlanner\Domain; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
+namespace TT\TeamPlanner\Domain;
 
 final class MatchAppearance
 {
     public function __construct(
-        public readonly int     $id,
-        public readonly string  $season,
-        public readonly int     $phase,
-        public readonly int     $round,
-        public readonly string  $teamCode,
-        public readonly int     $teamRank,
-        public readonly int     $playerId,
-        public readonly int     $slotNumber,
-        public readonly string  $validatedAt,
-        public readonly ?int    $validatedBy,
+        public readonly int $id,
+        public readonly string $season,
+        public readonly int $phase,
+        public readonly int $round,
+        public readonly string $teamCode,
+        public readonly int $teamRank,
+        public readonly int $playerId,
+        public readonly int $slotNumber,
+        public readonly string $validatedAt,
+        public readonly ?int $validatedBy,
     ) {}
 
     public static function fromRow(array $row): self
