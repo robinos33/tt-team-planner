@@ -175,6 +175,22 @@ describe('buildModel', () => {
     expect(m.teams.every((t) => t.unverified)).toBe(true);
   });
 
+  test('remplaçants : joueurs actifs, dispos et placés nulle part, du mieux classé au moins bien', () => {
+    const m = buildModel(input({
+      compositions: [slot('E1', 1, 1)],
+      players: [
+        player(1),                                       // placé
+        player(2, { ranking: 900 }),
+        player(3, { ranking: 1500 }),
+        player(4),                                       // indispo
+        player(5),                                       // dispo non renseignée
+        player(6, { is_active: false })                  // hors effectif
+      ],
+      availabilities: [avail(1, 'available'), avail(2, 'available'), avail(3, 'available'), avail(4, 'unavailable'), avail(6, 'available')]
+    }));
+    expect(m.bench).toEqual(['P3 NOM · 1500', 'P2 NOM · 900']);
+  });
+
   test('en-tête : club, journée, phase et date en toutes lettres', () => {
     const m = buildModel(input());
     expect(m.title).toBe('US Talence TT');
