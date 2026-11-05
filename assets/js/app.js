@@ -85,7 +85,7 @@
       var done = !!(date && date < today);
       var current = false;
       if (!done && date && !foundNext) { current = true; foundNext = true; }
-      return { n: i + 1, date: date, done: done, complete: 0, alerts: 0, current: current };
+      return { n: i + 1, date: date, done: done, current: current };
     });
   }
 
@@ -171,7 +171,9 @@
       apiFetch('/players'),
       apiFetch('/availability?season=' + season),
       apiFetch('/phase-squads?season=' + season + '&phase=' + phase),
-      apiFetch('/compositions?season=' + season + '&phase=' + phase)
+      apiFetch('/compositions?season=' + season + '&phase=' + phase),
+      // Pour les compteurs du tableau de bord ; sans eux, aucune équipe n'est forfait.
+      fetchForfeits(phase).catch(function () {})
     ]).then(function (res) {
       setState({ players: res[0] || [], availabilities: res[1] || [], squads: res[2] || [], phaseCompositions: res[3] || [], loading: false, loadError: null });
     }).catch(function (err) {
@@ -179,25 +181,46 @@
     });
   }
 
-  function countCompleteTeams(phase, round) {
-    var tc = S.teams.length;
-    if (!tc) return 0;
-    var complete = 0;
+  // Compos complètes d'une journée, comptées comme sur l'image de partage :
+  // une équipe forfait sort du dénominateur et s'affiche à part.
+  function countCompos(compos, phase, round) {
+    var forfeits = S.forfeits['p' + phase] || {};
+    var count = { complete: 0, playing: 0, forfeits: 0 };
     S.teams.forEach(function (team) {
-      var code  = team.code || team.id || '';
-      var slots = S.phaseCompositions.filter(function (c) {
+      var code = team.code || team.id || '';
+      if (forfeits[burnageKey(code, round)]) { count.forfeits++; return; }
+      count.playing++;
+      var filled = compos.filter(function (c) {
         return c.team_code === code && Number(c.phase) === phase && Number(c.round) === round && c.player_id;
-      });
-      if (slots.length >= 4) complete++;
+      }).length;
+      if (filled >= 4) count.complete++;
     });
-    return complete;
+    return count;
+  }
+
+  function composLabel(count, unit) {
+    return count.complete + '/' + count.playing + ' ' + unit +
+      (count.forfeits ? ' · ' + count.forfeits + ' forfait' + (count.forfeits > 1 ? 's' : '') : '');
+  }
+
+  // Les compos de la journée affichée remplacent celles de la même journée
+  // dans les compos de la phase, qui alimentent le tableau de bord.
+  function setRoundCompositions(compos, extra) {
+    var ph = S.phase + 1, rn = S.journeeN;
+    var phaseCompos = S.phaseCompositions.filter(function (c) {
+      return !(Number(c.phase) === ph && Number(c.round) === rn);
+    }).concat(compos);
+    setState(Object.assign({ compositions: compos, phaseCompositions: phaseCompos }, extra || {}));
   }
 
   function loadCompositions() {
+    var ph = S.phase + 1, rn = S.journeeN;
     apiFetch('/compositions?season=' + encodeURIComponent(cfg.season || '') +
-             '&phase=' + (S.phase + 1) + '&round=' + S.journeeN)
+             '&phase=' + ph + '&round=' + rn)
       .then(function (c) {
-        setState({ compositions: c || [] });
+        // Journée quittée entre-temps : ses compos seraient rangées sous la nouvelle.
+        if (S.phase + 1 !== ph || S.journeeN !== rn) return;
+        setRoundCompositions(c || []);
         loadBurnageContext(currentTeamCode(), S.journeeN);
       })
       .catch(function () {});
@@ -330,10 +353,14 @@
     var ph = S.phase + 1, rn = S.journeeN, se = cfg.season || '';
     var compos = S.compositions.filter(function (c) {
       return !(c.team_code === teamCode && c.slot_number === slotNum);
+    }).map(function (c) {
+      // Comme le serveur (clearPlayerFromRound) : un joueur déjà placé
+      // ailleurs dans la journée quitte son ancien slot.
+      return Number(c.player_id) === playerId ? Object.assign({}, c, { player_id: null }) : c;
     });
     compos.push({ team_code: teamCode, slot_number: slotNum, player_id: playerId, phase: ph, round: rn, season: se });
     invalidateBurnage(teamCode, rn);
-    setState({ compositions: compos, picker: null, pickerQ: '' });
+    setRoundCompositions(compos, { picker: null, pickerQ: '' });
     apiFetch('/compositions', {
       method: 'POST',
       body: JSON.stringify({ team_code: teamCode, slot_number: slotNum, player_id: playerId, phase: ph, round: rn, season: se })
@@ -349,7 +376,7 @@
         ? Object.assign({}, c, { player_id: null }) : c;
     });
     invalidateBurnage(teamCode, rn);
-    setState({ compositions: compos });
+    setRoundCompositions(compos);
     apiFetch('/compositions', {
       method: 'DELETE',
       body: JSON.stringify({ team_code: teamCode, slot_number: slotNum, phase: ph, round: rn, season: se })
@@ -655,7 +682,6 @@
     var dark = S.dark; var t = tk(dark);
     var jj = S.journees;
     var done = jj.filter(function (j) { return j.done; }).length;
-    var tc = S.teams.length;
 
     // Prochaine journée globale (toutes phases confondues)
     var nextGlobal = findGlobalNext();
@@ -663,10 +689,10 @@
     var showGlobal = !!(nextGlobal && nextGlobal.phase !== S.phase + 1);
     // Journée courante dans la phase affichée (première avec date future)
     var nextLocal  = jj.find(function (j) { return j.current; }) || jj[jj.length - 1];
-    // Objet unifié : { round, date, phase, complete }
+    // Objet unifié : { round, date, phase }
     var next = showGlobal
       ? nextGlobal
-      : { round: nextLocal.n, date: nextLocal.date, phase: S.phase + 1, complete: nextLocal.complete };
+      : { round: nextLocal.n, date: nextLocal.date, phase: S.phase + 1 };
 
     var h = '<div style="padding:16px;display:flex;flex-direction:column;gap:14px">';
 
@@ -686,7 +712,7 @@
     h += '<div style="background:linear-gradient(135deg,' + C.pri + ',' + C.priInk + ');color:white;border-radius:14px;padding:14px;position:relative;overflow:hidden">' +
       '<div style="font-size:11px;opacity:0.85;font-weight:500;letter-spacing:0.4px;text-transform:uppercase">Prochaine journée' + esc(nextPhaseLabel) + '</div>' +
       '<div style="font-size:22px;font-weight:700;margin-top:4px;letter-spacing:-0.3px">J' + next.round + (next.date ? ' · ' + esc(next.date) : '') + '</div>' +
-      '<div style="font-size:12px;opacity:0.9;margin-top:2px">' + countCompleteTeams(next.phase, next.round) + ' / ' + tc + ' compositions complètes</div>' +
+      '<div style="font-size:12px;opacity:0.9;margin-top:2px">' + composLabel(countCompos(S.phaseCompositions, next.phase, next.round), 'compositions complètes') + '</div>' +
       '<div style="display:flex;gap:6px;margin-top:12px">' +
         '<button ' + nextAction + ' style="background:white;color:' + C.priInk + ';border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Préparer les compos →</button>' +
       '</div>' +
@@ -705,7 +731,7 @@
         '<div style="flex:1;min-width:0;text-align:left">' +
           '<div style="font-size:13px;font-weight:600;color:' + t.ink + '">' + (j.date ? esc(j.date) : 'Journée ' + j.n) + '</div>' +
           '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:1px">' +
-            (j.done ? 'Terminée' : (countCompleteTeams(S.phase + 1, j.n) + ' / ' + tc + ' compos')) +
+            (j.done ? 'Terminée' : composLabel(countCompos(S.phaseCompositions, S.phase + 1, j.n), 'compos')) +
           '</div>' +
         '</div>' +
         (j.done ? '<span style="font-size:14px">✅</span>' : '') +
@@ -726,7 +752,7 @@
     var tc = S.teams.length;
     var teams = S.teams;
 
-    var tcLabel = tc ? ((j.complete || 0) + '/' + tc + ' compos') : 'Pas d\'équipe configurée';
+    var tcLabel = tc ? composLabel(countCompos(S.compositions, S.phase + 1, jn), 'compos') : 'Pas d\'équipe configurée';
     var shareBtn = tc
       ? '<button data-action="share-open" title="Image des compos de toutes les équipes, à partager" style="height:32px;padding:0 10px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">📤 Partager les compos</button>'
       : '';
@@ -798,7 +824,9 @@
       if (filled === 4) {
         h += '<button data-action="round-validate"' + roundAttrs + ' style="margin-top:10px;width:100%;padding:9px;border-radius:8px;background:' + C.pri + ';border:none;color:white;font-size:12px;font-weight:600;cursor:pointer">✓ Valider cette composition (rencontre jouée)</button>';
       }
-      h += '<button data-action="round-forfeit"' + roundAttrs + ' style="' + ghostBtn + '">Déclarer forfait</button>';
+      // Rare (une fois par saison, au plus) : un lien discret, pas un bouton
+      // au niveau de la validation.
+      h += '<div style="margin-top:8px;text-align:right"><button data-action="round-forfeit"' + roundAttrs + ' style="padding:2px 0;background:none;border:none;color:' + t.ink2 + ';font-size:11px;text-decoration:underline;cursor:pointer">Déclarer un forfait</button></div>';
     }
     h += '</div>';
 
