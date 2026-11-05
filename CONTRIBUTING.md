@@ -60,17 +60,27 @@ Toutes les contributions sont les bienvenues, en particulier :
 
 ### 1. Prérequis
 
-- PHP 8.1+, WordPress 6.4+
+- PHP 8.2+, WordPress 6.4+
 - Composer, Node.js
 
 ### 2. Installer l'environnement
 
+Docker et Node.js suffisent : PHP tourne dans des conteneurs, quelle que soit la version installée sur le poste.
+
 ```bash
 git clone <url-du-repo> tt-team-planner
 cd tt-team-planner
-composer install
-npm install
+docker run --rm -v "$PWD":/app -w /app composer:2.8 install
 ```
+
+**WordPress local** — le plugin et [MonClubTT](https://github.com/robinos33/MonClubTT) dans un WordPress Docker (PHP 8.2, le minimum de MonClubTT) :
+
+```bash
+npx @wordpress/env@12.0.0 start    # http://localhost:8888, admin / password
+npx @wordpress/env@12.0.0 stop
+```
+
+Le dossier du dépôt est monté tel quel : une modification est visible au rechargement de la page. L'import des joueurs passe par MonClubTT, qu'il faut configurer avec ses propres accès FFTT. Pour surcharger la config localement (port, version de MonClubTT), créer un `.wp-env.override.json`, ignoré par git.
 
 ### 3. Créer une branche
 
@@ -111,11 +121,12 @@ docs(readme): ajoute les captures d'écran
 Toute nouvelle fonctionnalité doit être couverte par des tests :
 
 ```bash
-composer test          # tous les tests PHP
-npm test               # tests JavaScript
+docker run --rm -v "$PWD":/app -w /app php:8.2-cli vendor/bin/phpunit
 ```
 
-Les tests PHP se trouvent dans `tests/`, organisés en `Unit/` et `Integration/`.
+Les tests PHP se trouvent dans `tests/Unit/` et ne démarrent pas WordPress : les fonctions WordPress sont simulées avec [Brain Monkey](https://giuseppe-mazzapica.gitbook.io/brain-monkey), et les repositories remplacés par des doublures en mémoire (voir `tests/Unit/Domain/BurnageCheckerTest.php`). La CI les lance sur chaque PR, en PHP 8.2 et 8.4.
+
+Pas encore de tests JavaScript.
 
 ### 6. Ouvrir la pull request
 
