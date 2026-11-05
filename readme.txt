@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.9.1
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,18 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
 
 == Changelog ==
+
+= 1.10.0 =
+* Feature: projected burnage. A player who would be burned if the earlier rounds not yet validated were played as composed now gets an orange warning badge in the line-ups and the player picker. Real burnage is unchanged and still counts validated rounds only.
+* Feature: sharing the line-ups image now attaches a link to the round, which messaging apps turn into a clickable link. The share window also shows the link with a Copy button, for when the image is downloaded instead.
+* Fix: validating or unvalidating a round now reloads the burnage of the following rounds, instead of showing stale badges until the team is changed.
+* Fix: the round view subtitle always showed "0/N line-ups". It now counts the teams with four players in the round on screen.
+* Fix: the dashboard counters now follow line-up changes without reloading the page.
+* Fix: a player moved to another team of the same round no longer stays displayed in their former slot until the next reload.
+* Fix: the magic link email text can now be translated.
+* Change: a team declared forfeit no longer counts as an incomplete line-up. The counters leave it out and show it apart ("5/7 line-ups · 1 forfeit"), like the share image.
+* Change: "Declare forfeit" becomes a discreet link, so it no longer sits at the same level as "Validate this line-up".
+* Change: the manual "burned" flag, which nothing could set or display, is removed along with its badge, the "Burned" filter of the player list and its database column. The burnage computed for each team is unchanged.
 
 = 1.9.1 =
 * Change: the "Gestionnaire planner" role is renamed "Membre commission équipe". Existing role holders keep it, with the same rights.
@@ -139,6 +151,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.10.0 =
+Projected burnage, a link to the round in the shared image, and line-up counters that stay right. Nothing to do.
 
 = 1.9.1 =
 The "Gestionnaire planner" role is renamed "Membre commission équipe". Nothing to do.
