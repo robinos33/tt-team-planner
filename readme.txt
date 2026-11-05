@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.6.1
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ The app registers a Service Worker and caches assets for offline use. Data will 
 Yes — the app is designed mobile-first. It installs as a PWA on iOS and Android.
 
 == Changelog ==
+
+= 1.7.0 =
+* Changed: the plugin now requires PHP 8.2, the version already required by MonClubTT. Activation is refused on an older PHP.
 
 = 1.6.1 =
 * Fix: the FFTT import recorded played matches and validated the round, but left the team line-ups empty in the app. Line-ups are now filled from the match sheet; a player planned in another team for the same round is removed from it.
@@ -120,6 +123,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.7.0 =
+Requires PHP 8.2 or later. Check your hosting PHP version before updating.
 
 = 1.6.1 =
 Played rounds imported from the FFTT now show their line-up. Run "Import now" once after updating to fill the rounds already imported.
