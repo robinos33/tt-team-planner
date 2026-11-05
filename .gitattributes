@@ -17,3 +17,4 @@ tests/            export-ignore
 .claude/          export-ignore
 .github/          export-ignore
 .idea/            export-ignore
+.wp-env.json      export-ignore

@@ -31,3 +31,6 @@ src/
 skills.md
 claude.md
 languages/.gitkeep
+
+# wp-env
+.wp-env.override.json
