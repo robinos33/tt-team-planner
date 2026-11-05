@@ -5,6 +5,7 @@
 let buildModel;
 
 beforeAll(async () => {
+  await import('../../assets/js/roster.js');
   await import('../../assets/js/share-image.js');
   buildModel = window.TTPShareImage.buildModel;
 });

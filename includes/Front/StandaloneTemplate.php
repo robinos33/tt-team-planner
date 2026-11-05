@@ -37,6 +37,7 @@ class StandaloneTemplate
         $clubName    = esc_html(get_option('ttp_club_name', 'TT Team Planner'));
         $cssUrl      = esc_url(TTP_PLUGIN_URL . 'assets/css/app.css?v=' . TTP_VERSION);
         $jsUrl       = esc_url(TTP_PLUGIN_URL . 'assets/js/app.js?v='  . TTP_VERSION);
+        $rosterJsUrl = esc_url(TTP_PLUGIN_URL . 'assets/js/roster.js?v=' . TTP_VERSION);
         $shareJsUrl  = esc_url(TTP_PLUGIN_URL . 'assets/js/share-image.js?v=' . TTP_VERSION);
         $pwaEnabled  = Assets::pwaEnabled();
 
@@ -66,6 +67,7 @@ class StandaloneTemplate
         echo '<body style="margin:0;padding:0;overflow:hidden;background:#f5f7fb;height:100dvh">';
         echo '<div id="ttp-app"></div>';
         echo '<script>window.TTPConfig = ' . $configJson . ';</script>';
+        echo '<script src="' . $rosterJsUrl . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- app shell autonome, wp_enqueue_script() non applicable
         echo '<script src="' . $shareJsUrl . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- app shell autonome, wp_enqueue_script() non applicable
         echo '<script src="' . $jsUrl . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- app shell autonome, wp_enqueue_script() non applicable
         echo '</body></html>';

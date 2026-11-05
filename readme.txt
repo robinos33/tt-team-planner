@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
 
 == Changelog ==
+
+= 1.11.0 =
+* Feature: a "Dispos" tab in the round view lists every active player for the round, grouped by availability: available and not selected, available and selected (with their team), uncertain, no answer (with the SMS reminder) and unavailable. A header tells whether there are enough players: "31 available for 40 places · 6 without answer", forfeited teams left out.
 
 = 1.10.0 =
 * Feature: projected burnage. A player who would be burned if the earlier rounds not yet validated were played as composed now gets an orange warning badge in the line-ups and the player picker. Real burnage is unchanged and still counts validated rounds only.
@@ -151,6 +154,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.11.0 =
+New "Dispos" tab in the round view: see at a glance who is available, selected or has not answered. Nothing to do.
 
 = 1.10.0 =
 Projected burnage, a link to the round in the shared image, and line-up counters that stay right. Nothing to do.

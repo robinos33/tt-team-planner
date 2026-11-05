@@ -62,8 +62,9 @@ class Assets
         }
 
         wp_enqueue_style('ttp-app', TTP_PLUGIN_URL . 'assets/css/app.css', [], TTP_VERSION);
-        wp_enqueue_script('ttp-share-image', TTP_PLUGIN_URL . 'assets/js/share-image.js', [], TTP_VERSION, true);
-        wp_enqueue_script('ttp-app', TTP_PLUGIN_URL . 'assets/js/app.js', ['ttp-share-image'], TTP_VERSION, true);
+        wp_enqueue_script('ttp-roster', TTP_PLUGIN_URL . 'assets/js/roster.js', [], TTP_VERSION, true);
+        wp_enqueue_script('ttp-share-image', TTP_PLUGIN_URL . 'assets/js/share-image.js', ['ttp-roster'], TTP_VERSION, true);
+        wp_enqueue_script('ttp-app', TTP_PLUGIN_URL . 'assets/js/app.js', ['ttp-roster', 'ttp-share-image'], TTP_VERSION, true);
         wp_localize_script('ttp-app', 'TTPConfig', $this->buildConfig());
     }
 
