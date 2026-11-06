@@ -11,6 +11,8 @@ Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implé
 - 📋 **Compositions par journée** — assignation des 4 slots joueurs par équipe et par journée
 - 🔥 **Brûlage en temps réel** — calcul automatique des règles 2 et 3 (FFTT II.112.1) à chaque saisie
 - 🔮 **Brûlage projeté** — qui sera brûlé si les journées pas encore jouées se jouent comme composées
+- 4️⃣ **Équipe complète en régional** — une équipe de PN à R3 à moins de 4 joueurs est signalée, en rouge dans la semaine de la journée
+- ⓘ **Règles consultables depuis l'app** — le rappel des règles de brûlage et de qualification, sans accès au back-office
 - 📅 **Disponibilités** — chaque joueur renseigne ses disponibilités (dispo / indispo / incertain) ; l'onglet **Dispos** de la vue Journée montre qui est dispo, placé ou sans réponse
 - 👥 **Effectifs par phase** — ventilation des joueurs dans les équipes pour chaque demi-saison
 - 🔄 **Synchronisation FFTT** — import des licenciés depuis le plugin Mon Club TT
@@ -148,6 +150,20 @@ Le rang d'une équipe est déduit de son code (ex. `T1` → rang 1, `T3` → ran
 | Fond orange + bordure épaisse | Joueur qui serait brûlé si les compos prévues se jouent |
 
 Le statut est recalculé côté serveur après chaque modification de composition (invalidation du cache local + rechargement via `/burnage`).
+
+Le bouton **ⓘ** de la vue Journée ouvre le rappel de toutes les règles : une version courte pour chacune, le texte complet sur demande. Les règles viennent de `Domain/QualificationRules`, qui alimente aussi le récapitulatif des réglages.
+
+### Équipe complète (régional)
+
+En Pré-Nationale, R1, R2 et R3, une équipe doit compter 4 joueurs ayant disputé au moins une partie (règlement régional LNATT, art. 4.6.2). À moins de 4, elle perd la rencontre (0 point) et paie 30 €. **Ce n'est pas un forfait** : le brûlage des joueurs présents se calcule normalement, et il ne faut pas déclarer de forfait dans l'application, sinon II.112.2 s'appliquerait à tort aux autres équipes.
+
+| Situation | Affichage |
+|-----------|-----------|
+| Départementale, Pré-Régionale, niveau vide | `3/4` orange, comme avant |
+| Régional, journée à plus de 6 jours | `3/4` orange et « 4 joueurs obligatoires » sous le niveau |
+| Régional, à partir de J-6 | `3/4 · rencontre perdue` en rouge, ⚠ sur l'onglet de l'équipe, et sur l'image de partage |
+
+Le niveau est lu depuis la saisie libre des réglages (`Domain/Division`), et `TTPConfig.teams[].full_team_required` le transmet au front. Déclarer un forfait pour une équipe dont la compo compte des joueurs demande une confirmation qui rappelle la différence.
 
 ### Brûlage projeté
 

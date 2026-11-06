@@ -64,7 +64,8 @@
     teams: cfg.teams || [],
     journees: buildJournees(cfg.phase || 0),
     pwaPrompt: null, pwaIos: false, pwaDismissed: !!localStorage.getItem('ttp-pwa-dismissed'),
-    share: null
+    share: null,
+    rulesOpen: false, rulesDetail: {}
   };
 
   function todayISO() {
@@ -321,12 +322,30 @@
     }).catch(function (err) { alert('Erreur : ' + err.message); });
   }
 
+  // Équipe régionale à moins de 4 joueurs (team-check.js) : null, 'notice'
+  // tant que la journée est loin, 'alert' dans la semaine de la journée.
+  function teamCompleteness(team, filled, round) {
+    var j = S.journees.find(function (x) { return x.n === round; });
+    return w.TTPTeamCheck.completeness(team, filled, j ? j.date : '', todayISO());
+  }
+
   function isForfeit(teamCode, round) {
     return !!(S.forfeits['p' + (S.phase + 1)] || {})[burnageKey(teamCode, round)];
   }
 
+  // Une équipe qui a joué incomplète n'est pas forfait (LNATT 4.6.2) : la
+  // déclarer forfait appliquerait à tort II.112.2 au brûlage des autres.
+  function forfeitQuestion(teamCode, round) {
+    var question = 'Déclarer le forfait de cette équipe pour la J' + round + ' ? Les règles de qualification des autres équipes en tiennent compte.';
+    var placed = getCompoSlots(teamCode).filter(function (s) { return s.player_id; }).length;
+    if (!placed) return question;
+    return (placed > 1 ? placed + ' joueurs sont placés' : '1 joueur est placé') + ' dans cette compo.\n\n' +
+      'Une équipe qui a joué incomplète n’est PAS forfait : sa rencontre est perdue, mais ses joueurs ont joué et le brûlage des autres équipes n’est pas modifié.\n\n' +
+      'Déclarer quand même le forfait pour la J' + round + ' ?';
+  }
+
   function setForfeit(teamCode, round, declared) {
-    if (declared && !confirm('Déclarer le forfait de cette équipe pour la J' + round + ' ? Les règles de qualification des autres équipes en tiennent compte.')) return;
+    if (declared && !confirm(forfeitQuestion(teamCode, round))) return;
     var ph = S.phase + 1;
     apiFetch('/forfeits', {
       method: declared ? 'POST' : 'DELETE',
@@ -634,6 +653,35 @@
     '</div>';
   }
 
+  // Rappel des règles pour qui n'a pas accès aux réglages : la version
+  // courte, le texte complet sur demande.
+  function renderRules() {
+    var t = tk(S.dark);
+    var items = (cfg.rules || []).map(function (rule, i) {
+      var open = !!S.rulesDetail[i];
+      return '<div style="padding:10px 0;border-top:1px solid ' + t.bord + '">' +
+        '<div style="display:flex;align-items:baseline;gap:8px">' +
+          '<div style="flex:1;font-size:13px;font-weight:700;color:' + t.ink + '">' + esc(rule.title) + '</div>' +
+          '<div style="font-size:10px;color:' + t.ink2 + ';white-space:nowrap">' + esc(rule.reference) + '</div>' +
+        '</div>' +
+        '<div style="margin-top:4px;font-size:12px;color:' + t.ink + ';line-height:1.5">' + esc(rule.summary) + '</div>' +
+        (open ? '<div style="margin-top:6px;padding:8px;border-radius:8px;background:' + t.surf2 + ';font-size:12px;color:' + t.ink2 + ';line-height:1.5">' + esc(rule.detail) + '</div>' : '') +
+        '<button data-action="rule-detail" data-value="' + i + '" style="margin-top:4px;padding:2px 0;background:none;border:none;color:' + C.pri + ';font-size:11px;font-weight:600;cursor:pointer">' + (open ? 'Masquer le détail' : 'Voir le détail') + '</button>' +
+      '</div>';
+    }).join('');
+    return '<div style="position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px">' +
+      '<div data-action="rules-close" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>' +
+      '<div style="position:relative;background:' + t.surf + ';border-radius:14px;padding:16px;max-width:480px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.3)">' +
+        '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">' +
+          '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">Règles de brûlage et de qualification</div>' +
+          '<div style="font-size:11px;color:' + t.ink2 + ';margin-top:2px">Championnat régional par équipes, ligue Nouvelle-Aquitaine</div></div>' +
+          '<button data-action="rules-close" aria-label="Fermer" style="width:28px;height:28px;border-radius:8px;border:none;background:' + t.surf2 + ';color:' + t.ink2 + ';font-size:14px;cursor:pointer;flex-shrink:0">✕</button>' +
+        '</div>' +
+        '<div style="max-height:65vh;overflow-y:auto;-webkit-overflow-scrolling:touch">' + items + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function renderWipeConfirm() {
     var dark = S.dark; var t = tk(dark);
     var p = getPlayer(S.wipeConfirm);
@@ -771,7 +819,11 @@
     var shareBtn = tc
       ? '<button data-action="share-open" title="Image des compos de toutes les équipes, à partager" style="height:32px;padding:0 10px;border-radius:8px;border:none;background:' + C.pri + ';color:white;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">📤 Partager les compos</button>'
       : '';
-    var h = topBar('Journée ' + jn, (j.date ? esc(j.date) + ' · ' : '') + tcLabel, dark, true, shareBtn);
+    var rulesBtn = (cfg.rules || []).length
+      ? '<button data-action="rules-open" title="Règles de brûlage et de qualification" aria-label="Règles de brûlage et de qualification" style="width:32px;height:32px;border-radius:8px;border:1px solid ' + t.bord + ';background:' + t.surf + ';color:' + t.ink2 + ';font-size:16px;cursor:pointer;flex-shrink:0">ⓘ</button>'
+      : '';
+    var h = topBar('Journée ' + jn, (j.date ? esc(j.date) + ' · ' : '') + tcLabel, dark, true,
+      '<div style="display:flex;gap:6px;flex-shrink:0">' + rulesBtn + shareBtn + '</div>');
 
     // Journée tabs (scrollable)
     h += '<div style="display:flex;overflow-x:auto;padding:10px 12px;gap:6px;background:' + t.surf + ';border-bottom:1px solid ' + t.bord + ';-webkit-overflow-scrolling:touch">';
@@ -789,9 +841,10 @@
         var active = !S.disposOpen && i === S.activeTeamI;
         var slots = getCompoSlots(team.code || team.id || '');
         var filled = slots.filter(function (s) { return s.player_id; }).length;
+        var lost = !isForfeit(team.code || team.id || '', jn) && teamCompleteness(team, filled, jn) === 'alert';
         h += '<button data-action="team-tab" data-value="' + i + '" style="padding:6px 10px;border-radius:8px;border:1px solid ' + (active ? (team.color || C.pri) : t.bord) + ';background:' + (active ? (team.color || C.pri) : t.surf) + ';color:' + (active ? 'white' : t.ink) + ';cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0">' +
           '<span>' + esc(team.code || team.id || 'E' + (i + 1)) + '</span>' +
-          '<span style="opacity:0.7">' + filled + '/4</span>' +
+          '<span style="opacity:0.7">' + (lost ? '⚠ ' : '') + filled + '/4</span>' +
         '</button>';
       });
       h += '</div>';
@@ -820,15 +873,21 @@
     var burnMap   = S.burnage[bKey] || {};
     var validated = !!S.validations[bKey];
     var forfeit   = isForfeit(tcode, round);
+    var check     = forfeit ? null : teamCompleteness(team, filled, round);
 
     var h = '<div style="padding:12px">';
     // Team header
     h += '<div style="background:' + t.surf + ';border:1px solid ' + t.bord + ';border-left:4px solid ' + tc + ';border-radius:10px;padding:12px;margin-bottom:10px">' +
       '<div style="display:flex;align-items:center;gap:8px">' +
-        '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">' + esc(team.name || team.id || 'Équipe') + '</div><div style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level || '') + '</div></div>' +
+        '<div style="flex:1"><div style="font-size:15px;font-weight:700;color:' + t.ink + '">' + esc(team.name || team.id || 'Équipe') + '</div><div style="font-size:11px;color:' + t.ink2 + '">' + esc(team.level || '') + (check === 'notice' ? ' · 4 joueurs obligatoires' : '') + '</div></div>' +
         (validated ? badge('✓ Journée validée', 'ok', dark, true) : '') +
-        (forfeit ? badge('Forfait', 'danger', dark, true) : badge(filled + '/4', filled === 4 ? 'ok' : 'warn', dark)) +
+        (forfeit ? badge('Forfait', 'danger', dark, true)
+          : check === 'alert' ? badge(filled + '/4 · rencontre perdue', 'danger', dark)
+          : badge(filled + '/4', filled === 4 ? 'ok' : 'warn', dark)) +
       '</div>';
+    if (check === 'alert') {
+      h += '<div style="margin-top:8px;font-size:12px;color:' + C.err + ';line-height:1.5">Équipe incomplète : en régional, il faut 4 joueurs. À moins de 4, la rencontre est perdue (0 point) et coûte 30 €. Ce n’est pas un forfait.</div>';
+    }
     var ghostBtn = 'margin-top:10px;width:100%;padding:9px;border-radius:8px;background:transparent;border:1px solid ' + t.bord + ';color:' + t.ink2 + ';font-size:12px;font-weight:600;cursor:pointer';
     var roundAttrs = ' data-team="' + esc(tcode) + '" data-round="' + round + '"';
     if (validated) {
@@ -1606,6 +1665,7 @@
       (S.bulkResult ? renderBulkResult() : '') +
       (S.wipeConfirm ? renderWipeConfirm() : '') +
       (S.share ? renderShare() : '') +
+      (S.rulesOpen ? renderRules() : '') +
     '</div>';
   }
 
@@ -2015,6 +2075,11 @@
       case 'bulk-result-close':  setState({ bulkResult: null }); break;
       case 'dispos-open':           setState({ disposOpen: true }); break;
       case 'dispos-unavail-toggle': setState({ disposUnavailOpen: !S.disposUnavailOpen }); break;
+      case 'rules-open':         setState({ rulesOpen: true }); break;
+      case 'rules-close':        setState({ rulesOpen: false, rulesDetail: {} }); break;
+      case 'rule-detail':
+        var rd = Object.assign({}, S.rulesDetail); rd[v] = !rd[v];
+        setState({ rulesDetail: rd }); break;
       case 'share-open':         openShare(); break;
       case 'share-send':         sendShare(); break;
       case 'share-copy-link':    copyShareLink(); break;
