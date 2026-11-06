@@ -68,7 +68,8 @@ class Assets
         wp_enqueue_script('ttp-roster', TTP_PLUGIN_URL . 'assets/js/roster.js', [], TTP_VERSION, true);
         wp_enqueue_script('ttp-team-check', TTP_PLUGIN_URL . 'assets/js/team-check.js', [], TTP_VERSION, true);
         wp_enqueue_script('ttp-share-image', TTP_PLUGIN_URL . 'assets/js/share-image.js', ['ttp-roster', 'ttp-team-check'], TTP_VERSION, true);
-        wp_enqueue_script('ttp-app', TTP_PLUGIN_URL . 'assets/js/app.js', ['ttp-roster', 'ttp-team-check', 'ttp-share-image'], TTP_VERSION, true);
+        wp_enqueue_script('ttp-sms', TTP_PLUGIN_URL . 'assets/js/sms.js', [], TTP_VERSION, true);
+        wp_enqueue_script('ttp-app', TTP_PLUGIN_URL . 'assets/js/app.js', ['ttp-roster', 'ttp-team-check', 'ttp-share-image', 'ttp-sms'], TTP_VERSION, true);
         wp_localize_script('ttp-app', 'TTPConfig', $this->buildConfig());
     }
 
