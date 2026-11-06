@@ -48,7 +48,7 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 = Who can edit the planner? =
 
-Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
+Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches, resetting the season and reading the action history remain reserved to administrators.
 
 == Changelog ==
 
