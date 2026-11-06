@@ -23,6 +23,7 @@ use TT\TeamPlanner\Rest\SyncController;
 use TT\TeamPlanner\Rest\SeasonController;
 use TT\TeamPlanner\Rest\ManifestController;
 use TT\TeamPlanner\Rest\SmsTemplatesController;
+use TT\TeamPlanner\Rest\AuditLogController;
 
 final class Plugin
 {
@@ -110,6 +111,7 @@ final class Plugin
         (new MagicLinkController())->registerRoutes();
         (new ManifestController())->registerRoutes();
         (new SmsTemplatesController())->registerRoutes();
+        (new AuditLogController())->registerRoutes();
     }
 
     public function registerAdminMenu(): void

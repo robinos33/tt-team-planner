@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use TT\TeamPlanner\Audit\AuditDescriber;
 use TT\TeamPlanner\Audit\AuditLookup;
+use TT\TeamPlanner\Rest\AuditLogController;
 use TT\TeamPlanner\Rest\AvailabilityController;
 use TT\TeamPlanner\Rest\MagicLinkController;
 use TT\TeamPlanner\Rest\ManifestController;
@@ -62,7 +63,7 @@ final class AuditDescriberTest extends TestCase
         });
 
         foreach ([
-            AvailabilityController::class, MagicLinkController::class,
+            AuditLogController::class, AvailabilityController::class, MagicLinkController::class,
             ManifestController::class, MatchAppearanceController::class, PhaseSquadController::class,
             PlayersController::class, SeasonController::class, SmsTemplatesController::class,
             SyncController::class, TeamsController::class,

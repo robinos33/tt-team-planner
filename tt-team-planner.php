@@ -72,6 +72,7 @@ $ttp_includes = [
     'includes/Rest/SeasonController.php',
     'includes/Rest/ManifestController.php',
     'includes/Rest/SmsTemplatesController.php',
+    'includes/Rest/AuditLogController.php',
     'includes/Front/Shortcode.php',
     'includes/Front/Assets.php',
     'includes/Front/StandaloneTemplate.php',
