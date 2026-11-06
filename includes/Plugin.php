@@ -21,6 +21,7 @@ use TT\TeamPlanner\Rest\TeamsController;
 use TT\TeamPlanner\Rest\SyncController;
 use TT\TeamPlanner\Rest\SeasonController;
 use TT\TeamPlanner\Rest\ManifestController;
+use TT\TeamPlanner\Rest\SmsTemplatesController;
 
 final class Plugin
 {
@@ -94,6 +95,7 @@ final class Plugin
         (new SeasonController())->registerRoutes();
         (new MagicLinkController())->registerRoutes();
         (new ManifestController())->registerRoutes();
+        (new SmsTemplatesController())->registerRoutes();
     }
 
     public function registerAdminMenu(): void
