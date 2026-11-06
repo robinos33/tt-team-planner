@@ -50,4 +50,9 @@ $ttp_options = [
 foreach ($ttp_options as $ttp_option) {
     delete_option($ttp_option);
 }
+
+// Modèles SMS personnels des membres
+foreach (['ttp_sms_template_availability', 'ttp_sms_template_confirmation'] as $ttp_meta_key) {
+    delete_metadata('user', 0, $ttp_meta_key, '', true);
+}
 // phpcs:enable

@@ -6,6 +6,7 @@ namespace TT\TeamPlanner\Front;
 
 use TT\TeamPlanner\Domain\Division;
 use TT\TeamPlanner\Domain\QualificationRules;
+use TT\TeamPlanner\Repository\SmsTemplateRepository;
 
 class Assets
 {
@@ -68,7 +69,8 @@ class Assets
         wp_enqueue_script('ttp-roster', TTP_PLUGIN_URL . 'assets/js/roster.js', [], TTP_VERSION, true);
         wp_enqueue_script('ttp-team-check', TTP_PLUGIN_URL . 'assets/js/team-check.js', [], TTP_VERSION, true);
         wp_enqueue_script('ttp-share-image', TTP_PLUGIN_URL . 'assets/js/share-image.js', ['ttp-roster', 'ttp-team-check'], TTP_VERSION, true);
-        wp_enqueue_script('ttp-app', TTP_PLUGIN_URL . 'assets/js/app.js', ['ttp-roster', 'ttp-team-check', 'ttp-share-image'], TTP_VERSION, true);
+        wp_enqueue_script('ttp-sms', TTP_PLUGIN_URL . 'assets/js/sms.js', [], TTP_VERSION, true);
+        wp_enqueue_script('ttp-app', TTP_PLUGIN_URL . 'assets/js/app.js', ['ttp-roster', 'ttp-team-check', 'ttp-share-image', 'ttp-sms'], TTP_VERSION, true);
         wp_localize_script('ttp-app', 'TTPConfig', $this->buildConfig());
     }
 
@@ -90,6 +92,7 @@ class Assets
         $season = self::computeSeason();
         $phase  = self::detectPhase();
         $teams  = get_option('ttp_teams', []);
+        $sms    = (new SmsTemplateRepository())->forUser(get_current_user_id());
 
         return [
             'apiBase'           => rest_url('ttp/v1'),
@@ -106,10 +109,9 @@ class Assets
             'rules'             => QualificationRules::all(),
             'version'           => TTP_VERSION,
             'maxForeignPlayers' => self::MAX_FOREIGN,
-            'smsTemplates'      => [
-                'availability' => get_option('ttp_sms_template_availability', ''),
-                'confirmation' => get_option('ttp_sms_template_confirmation', ''),
-            ],
+            // Modèle personnel du membre, à défaut celui du club.
+            'smsTemplates'      => $sms['templates'],
+            'smsCustom'         => $sms['custom'],
             'pwaEnabled'        => self::pwaEnabled(),
             'swUrl'             => self::pwaEnabled() ? self::serviceWorkerUrl() : null,
         ];

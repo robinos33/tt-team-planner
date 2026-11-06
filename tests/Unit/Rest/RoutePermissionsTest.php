@@ -15,6 +15,7 @@ use TT\TeamPlanner\Rest\MatchAppearanceController;
 use TT\TeamPlanner\Rest\PhaseSquadController;
 use TT\TeamPlanner\Rest\PlayersController;
 use TT\TeamPlanner\Rest\SeasonController;
+use TT\TeamPlanner\Rest\SmsTemplatesController;
 use TT\TeamPlanner\Rest\SyncController;
 use TT\TeamPlanner\Rest\TeamsController;
 
@@ -65,6 +66,7 @@ final class RoutePermissionsTest extends TestCase
             PhaseSquadController::class,
             PlayersController::class,
             SeasonController::class,
+            SmsTemplatesController::class,
             SyncController::class,
             TeamsController::class,
         ] as $controller) {

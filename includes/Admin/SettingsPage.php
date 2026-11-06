@@ -176,6 +176,7 @@ class SettingsPage
 
         // SMS
         echo '<h2>' . esc_html__('SMS pre-rediges', 'tt-team-planner') . '</h2>';
+        echo '<p class="description">' . esc_html__('Modeles du club. Chaque membre peut les remplacer pour lui-meme depuis l\'application (Reglages) ; sans modele personnel, il envoie celui du club.', 'tt-team-planner') . '</p>';
         echo '<p class="description">' . esc_html__('Variables : {prenom}, {nom}, {journee}, {date}, {equipe}', 'tt-team-planner') . '</p>';
         echo '<table class="form-table" role="presentation">';
 
