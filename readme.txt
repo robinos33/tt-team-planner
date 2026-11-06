@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.12.1
+Stable tag: 1.12.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
 
 == Changelog ==
+
+= 1.12.2 =
+* Fix: in the Players tab selection mode, clicking the round check mark next to a player did not select them. The whole card now toggles the selection.
 
 = 1.12.1 =
 * Fix: 1.12.0 crashed the app, the settings page and burnage with a critical error: two new classes were not loaded by the plugin.
@@ -162,6 +165,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.12.2 =
+Selecting players in bulk works when clicking the check mark.
 
 = 1.12.1 =
 Fixes the critical error introduced by 1.12.0. Update right away.
