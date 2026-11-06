@@ -77,6 +77,16 @@ final class SmsTemplatesControllerTest extends TestCase
         self::assertSame('Tu joues en {equipe}', $this->meta[self::ME]['ttp_sms_template_confirmation']);
     }
 
+    public function testRevientAuModeleDuClub(): void
+    {
+        $this->meta[self::ME] = ['ttp_sms_template_confirmation' => 'Le mien'];
+
+        $response = (new SmsTemplatesController())->reset(new WP_REST_Request(['kind' => 'confirmation']));
+
+        self::assertSame('Tu joues en {equipe}', $response->get_data()['templates']['confirmation']);
+        self::assertFalse($response->get_data()['custom']['confirmation']);
+    }
+
     public function testRefuseUnModeleVideSansRienEnregistrer(): void
     {
         $response = (new SmsTemplatesController())->update(new WP_REST_Request([
