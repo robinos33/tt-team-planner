@@ -154,4 +154,16 @@ final class AuditDescriberTest extends TestCase
 
         self::assertSame('a envoyé un lien de dispo à Léa DURAND', $entry['summary']);
     }
+
+    public function testDatesDuBackOffice(): void
+    {
+        $entry = $this->describer->describeOption(
+            'ttp_journee_dates_p1',
+            ['2026-09-27', '2026-10-11', '2026-11-07'],
+            ['2026-09-27', '2026-10-11', '2026-11-14']
+        );
+
+        self::assertSame('a modifié les dates de la phase 1 : J3 07/11 → 14/11', $entry['summary']);
+        self::assertNull($this->describer->describeOption('ttp_last_sync', null, 'x'));
+    }
 }
