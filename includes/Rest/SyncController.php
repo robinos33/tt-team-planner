@@ -16,8 +16,7 @@ use TT\TeamPlanner\Repository\PlayerRepository;
  *
  * MonClubTT fields used:  licence, nom, prénom, classement (points mensuels),
  *                        nationalité (étranger), catégorie (jeune).
- * Manual fields preserved on update: phone, usual_team, is_captain,
- *                                    is_mutation, notes.
+ * Manual fields preserved on update: phone, usual_team, is_mutation, notes.
  */
 class SyncController
 {

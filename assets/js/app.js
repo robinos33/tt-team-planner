@@ -417,6 +417,20 @@
     }).catch(function () { loadCompositions(); });
   }
 
+  // Remplace, pour cette journée, le capitaine de phase ou celui déjà nommé.
+  function setRoundCaptain(teamCode, playerId) {
+    var ph = S.phase + 1, rn = S.journeeN, se = cfg.season || '';
+    var compos = S.compositions.map(function (c) {
+      return c.team_code === teamCode
+        ? Object.assign({}, c, { is_captain: Number(c.player_id) === playerId }) : c;
+    });
+    setRoundCompositions(compos);
+    apiFetch('/compositions/captain', {
+      method: 'POST',
+      body: JSON.stringify({ team_code: teamCode, player_id: playerId, phase: ph, round: rn, season: se })
+    }).catch(function () { loadCompositions(); });
+  }
+
   function syncPlayers() {
     setState({ syncing: true, syncError: null });
     apiFetch('/players/sync', { method: 'POST' })
@@ -472,6 +486,19 @@
       .map(function (s) { return s.player_id; });
   }
 
+  // Capitaine de phase d'une équipe, quelle qu'elle soit, pour la phase affichée.
+  function isPhaseCaptain(playerId) {
+    return S.squads.some(function (s) {
+      return s.phase === S.phase + 1 && s.is_captain && String(s.player_id) === String(playerId);
+    });
+  }
+
+  function isSquadCaptain(playerId, teamCode, phase) {
+    return S.squads.some(function (s) {
+      return s.team_code === teamCode && s.phase === phase && s.is_captain && String(s.player_id) === String(playerId);
+    });
+  }
+
   function isInSquad(playerId, teamCode, phase) {
     return S.squads.some(function (s) {
       return s.team_code === teamCode && s.phase === phase && String(s.player_id) === String(playerId);
@@ -492,7 +519,7 @@
       var f = S.playerFilter;
       if (f === 'all') return true;
       if (f === 'ko')    return getAvail(p.id) === 'unavailable';
-      if (f === 'capt')  return !!p.is_captain;
+      if (f === 'capt')  return isPhaseCaptain(p.id);
       if (f === 'E')     return !!p.is_foreign;
       if (f === 'jeune') return !!p.is_young;
       return true;
@@ -528,10 +555,12 @@
     return !!(burnStatus && !burnStatus.burned && burnStatus.projected);
   }
 
-  function playerBadges(p, dark, burnStatus) {
+  // captain : le capitanat dépend de l'équipe et de la journée, c'est
+  // l'appelant qui le sait.
+  function playerBadges(p, dark, burnStatus, captain) {
     var h = '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:3px">';
     if (p.is_active === false) h += badge('🗑️ Hors effectif', 'neutral', dark, true);
-    if (p.is_captain) h += badge('© Cap.', 'primary', dark, true);
+    if (captain) h += badge('© Cap.', 'primary', dark, true);
     if (p.is_foreign) h += badge('E', 'purple', dark, true);
     if (p.is_young)   h += badge('Jeune', 'ok', dark, true);
     if (p.is_mutation)h += badge('Mut.', 'warn', dark, true);
@@ -887,6 +916,7 @@
     var canConfirm = !validated && !forfeit;
     var roundDate  = (S.journees[round - 1] || {}).date || '';
     var check     = forfeit ? null : teamCompleteness(team, filled, round);
+    var captainId = w.TTPRoster.captain(tcode, S.phase + 1, S.compositions, S.squads);
 
     var h = '<div style="padding:12px">';
     // Team header
@@ -947,6 +977,7 @@
         var burnStatus = burnMap[p.id];
         var danger = avail === 'unavailable' || (burnStatus && burnStatus.burned);
         var foreseen = !danger && isProjectedBurn(burnStatus);
+        var isCaptain = String(p.id) === String(captainId);
         var init = initials((p.first_name || '') + ' ' + (p.last_name || ''));
         var slotBg     = danger ? C.errSoft : foreseen ? C.warnSoft : t.surf;
         var slotBorder = danger ? '2px solid ' + C.err : foreseen ? '2px solid ' + C.warn : '1px solid ' + t.bord;
@@ -961,9 +992,13 @@
                 '<span style="font-size:11px;color:' + t.ink2 + '">·</span>' +
                 '<span style="font-size:11px;color:' + avColor(avail, dark) + '">' + avEmoji(avail) + ' ' + avStatus(avail) + '</span>' +
               '</div>' +
-              playerBadges(p, dark, burnStatus) +
+              playerBadges(p, dark, burnStatus, isCaptain) +
             '</div>' +
           '</button>' +
+          // Le capitaine ne se retire pas : on en nomme un autre.
+          (isCaptain
+            ? '<span title="Capitaine de la journée" style="width:36px;min-height:56px;align-self:stretch;border-left:1px solid ' + t.bord + ';color:' + C.pri + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">©</span>'
+            : '<button data-action="slot-captain" data-team="' + tcodeAttr + '" data-player-id="' + esc(p.id) + '" title="Nommer capitaine pour cette journée" style="width:36px;min-height:56px;align-self:stretch;border:none;border-left:1px solid ' + t.bord + ';background:transparent;color:' + t.ink2 + ';opacity:0.45;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">©</button>') +
           (canConfirm && p.phone
             ? '<a href="' + esc(smsHref('confirmation', p, round, roundDate, team.name || tcode)) + '" title="Confirmer sa place par SMS" style="width:40px;min-height:56px;align-self:stretch;border-left:1px solid ' + t.bord + ';color:' + C.pri + ';display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:15px;flex-shrink:0">💬</a>'
             : '') +
@@ -1263,7 +1298,7 @@
           '<span style="font-size:13px;font-weight:600;color:' + t.ink + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</span>' +
           '<span style="font-size:11px;color:' + t.ink2 + ';font-weight:500;flex-shrink:0">' + (p.ranking || 0) + '</span>' +
         '</div>' +
-        playerBadges(p, dark) +
+        playerBadges(p, dark, null, isPhaseCaptain(p.id)) +
       '</div>' +
     '</button>';
     if (bulkMode) {
@@ -1324,7 +1359,7 @@
     h += '<div style="flex:1;min-width:0">' +
       '<div style="font-size:18px;font-weight:700;color:' + (heroKo ? (dark ? '#fca5a5' : '#b91c1c') : t.ink) + ';letter-spacing:-0.3px">' + esc((p.first_name || '') + ' ' + (p.last_name || '')) + '</div>' +
       '<div style="font-size:12px;color:' + t.ink2 + ';margin-top:2px">' + (p.ranking || 0) + ' pts · ' + esc(team ? team.name : p.usual_team || '—') + '</div>' +
-      playerBadges(p, dark) +
+      playerBadges(p, dark, null, isPhaseCaptain(p.id)) +
     '</div></div>';
 
     // Status banners
@@ -1485,6 +1520,8 @@
           h += '<span style="font-size:11px;color:' + t.ink2 + ';margin-left:6px">' + (p.ranking || 0) + '</span>';
           h += playerBadges(p, dark);
           h += '</div>';
+          var capt = isSquadCaptain(p.id, teamCode, phase);
+          h += '<button data-action="squad-captain" data-team="' + esc(teamCode) + '" data-player-id="' + (capt ? 0 : p.id) + '" title="' + (capt ? 'Retirer le capitanat' : 'Nommer capitaine de phase') + '" style="width:28px;height:28px;border-radius:6px;border:' + (capt ? 'none' : '1px solid ' + t.bord) + ';background:' + (capt ? C.pri : 'transparent') + ';color:' + (capt ? 'white' : t.ink2) + ';font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">©</button>';
           h += '<button data-action="squad-remove" data-team="' + esc(teamCode) + '" data-player-id="' + p.id + '" style="width:28px;height:28px;border-radius:6px;border:none;background:' + C.errSoft + ';color:' + C.err + ';font-size:14px;cursor:pointer;flex-shrink:0">×</button>';
           h += '</div>';
         });
@@ -1986,6 +2023,22 @@
     }).catch(function () { loadSquads(); });
   }
 
+  // playerId = 0 : l'équipe n'a plus de capitaine de phase.
+  function squadCaptain(teamCode, playerId) {
+    var season = cfg.season || '';
+    var phase  = S.phase + 1;
+    // Optimiste, comme le serveur : un seul capitaine par équipe et par phase.
+    var next = S.squads.map(function (s) {
+      if (s.team_code !== teamCode || s.phase !== phase) return s;
+      return Object.assign({}, s, { is_captain: String(s.player_id) === String(playerId) });
+    });
+    setState({ squads: next });
+    apiFetch('/phase-squads/captain', {
+      method: 'POST',
+      body: JSON.stringify({ season: season, phase: phase, team_code: teamCode, player_id: playerId })
+    }).catch(function () { loadSquads(); });
+  }
+
   function squadVentilate() {
     setState({ squadLoading: true });
     apiFetch('/phase-squads/ventilate', {
@@ -2144,7 +2197,7 @@
       return {
         clubName: cfg.clubName, phase: phase, round: round, date: j ? j.date : '', generatedAt: new Date(),
         teams: S.teams, compositions: res[0] || [], players: S.players, availabilities: S.availabilities,
-        contexts: contexts, forfeits: forfeits, burnLabels: BURN_LABELS
+        squads: S.squads, contexts: contexts, forfeits: forfeits, burnLabels: BURN_LABELS
       };
     });
   }
@@ -2261,6 +2314,7 @@
       case 'slot-open':    setState({ picker: { teamCode: el.dataset.team, slotNum: parseInt(el.dataset.slot) }, pickerQ: '' }); break;
       case 'slot-assign':  if (S.picker) assignSlot(S.picker.teamCode, S.picker.slotNum, parseInt(el.dataset.playerId)); break;
       case 'slot-remove':  e.stopPropagation(); removeSlot(el.dataset.team, parseInt(el.dataset.slot)); break;
+      case 'slot-captain': setRoundCaptain(el.dataset.team, parseInt(el.dataset.playerId)); break;
       case 'round-validate':   validateTeamRound(el.dataset.team, parseInt(el.dataset.round)); break;
       case 'round-unvalidate': unvalidateTeamRound(el.dataset.team, parseInt(el.dataset.round)); break;
       case 'round-forfeit':        setForfeit(el.dataset.team, parseInt(el.dataset.round), true); break;
@@ -2275,6 +2329,8 @@
         squadAdd(el.dataset.team, parseInt(el.dataset.playerId)); break;
       case 'squad-remove':
         squadRemove(el.dataset.team, parseInt(el.dataset.playerId)); break;
+      case 'squad-captain':
+        squadCaptain(el.dataset.team, parseInt(el.dataset.playerId)); break;
       case 'squad-ventilate':
         squadVentilate(); break;
       case 'avail-toggle':

@@ -105,6 +105,24 @@ final class AuditDescriberTest extends TestCase
         self::assertNull($this->describer->describe('TeamsController::clearSlot', self::ROUND + ['slot_number' => 4], ['player_id' => null], []));
     }
 
+    public function testCapitaineDeLaJournee(): void
+    {
+        $entry = $this->describer->describe('TeamsController::setCaptain', self::ROUND + ['player_id' => 2], [], []);
+
+        self::assertSame('a nommé Hugo PETIT capitaine (Équipe 1, J3 de la phase 1)', $entry['summary']);
+    }
+
+    public function testCapitaineDePhase(): void
+    {
+        $squad = ['season' => '2026-2027', 'phase' => 1, 'team_code' => 'E1'];
+
+        $entry = $this->describer->describe('PhaseSquadController::setCaptain', $squad + ['player_id' => 1], [], []);
+        self::assertSame('a nommé Léa DURAND capitaine de phase (Équipe 1, phase 1)', $entry['summary']);
+
+        $entry = $this->describer->describe('PhaseSquadController::setCaptain', $squad + ['player_id' => 0], [], []);
+        self::assertSame('a retiré le capitaine de phase (Équipe 1, phase 1)', $entry['summary']);
+    }
+
     public function testDispoAvecLAncienStatut(): void
     {
         $entry = $this->describer->describe('AvailabilityController::setAvailability', self::ROUND + ['player_id' => 1, 'status' => 'unavailable'], ['status' => 'available'], []);

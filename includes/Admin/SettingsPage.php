@@ -539,7 +539,7 @@ class SettingsPage
         echo '<h2>' . esc_html__('Joueurs - synchronisation', 'tt-team-planner') . '</h2>';
         echo '<p>';
         echo esc_html__('Importe les joueurs depuis MonClubTT dans la base TT Team Planner. A relancer apres chaque synchro MonClubTT ou en debut de saison.', 'tt-team-planner');
-        echo '<br><em>' . esc_html__('Les donnees manuelles (telephone, equipe habituelle, capitaine, notes) sont preservees.', 'tt-team-planner') . '</em>';
+        echo '<br><em>' . esc_html__('Les donnees manuelles (telephone, equipe habituelle, notes) sont preservees.', 'tt-team-planner') . '</em>';
         echo '</p>';
 
         echo '<table class="form-table" role="presentation" style="margin-bottom:12px">';

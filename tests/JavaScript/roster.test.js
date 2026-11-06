@@ -103,3 +103,35 @@ describe('TTPRoster.group', () => {
     expect(group(input({ forfeits: null })).places).toBe(8);
   });
 });
+
+describe('TTPRoster.captain', () => {
+  let captain;
+  beforeAll(() => { captain = window.TTPRoster.captain; });
+
+  const compo = [slot('E1', 1, 1), slot('E1', 2, 2), slot('E1', 3, 3), slot('E2', 1, 4)];
+  const squad = (pid, extra) => Object.assign({ team_code: 'E1', phase: 1, player_id: pid, is_captain: false }, extra);
+
+  test('reprend le capitaine de phase quand il joue', () => {
+    expect(captain('E1', 1, compo, [squad(1), squad(2, { is_captain: true })])).toBe(2);
+  });
+
+  test('le capitaine nommé pour la journée passe avant celui de la phase', () => {
+    const named = compo.map((c) => (c.player_id === 3 ? Object.assign({}, c, { is_captain: true }) : c));
+    expect(captain('E1', 1, named, [squad(2, { is_captain: true })])).toBe(3);
+  });
+
+  test('personne quand le capitaine de phase ne joue pas', () => {
+    expect(captain('E1', 1, compo, [squad(9, { is_captain: true })])).toBeNull();
+  });
+
+  test("ignore le capitaine d'une autre équipe ou d'une autre phase", () => {
+    expect(captain('E1', 1, compo, [
+      squad(4, { team_code: 'E2', is_captain: true }),
+      squad(1, { phase: 2, is_captain: true })
+    ])).toBeNull();
+  });
+
+  test('un slot vide ne désigne personne', () => {
+    expect(captain('E1', 1, [{ team_code: 'E1', slot_number: 4, player_id: null, is_captain: true }], [])).toBeNull();
+  });
+});

@@ -335,7 +335,6 @@ final class BurnageCheckerTest extends TestCase
             ranking: $points,
             usualTeam: '',
             isForeign: $foreign,
-            isCaptain: false,
             isYoung: false,
             isMutation: false,
             notes: '',

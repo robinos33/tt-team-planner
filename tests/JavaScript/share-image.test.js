@@ -112,11 +112,22 @@ describe('buildModel', () => {
 
   test('étranger, mutation et capitaine reprennent les libellés de l’app', () => {
     const m = buildModel(input({
-      compositions: [slot('E1', 1, 1)],
-      players: [player(1, { is_foreign: true, is_mutation: true, is_captain: true })],
+      compositions: [Object.assign(slot('E1', 1, 1), { is_captain: true })],
+      players: [player(1, { is_foreign: true, is_mutation: true })],
       availabilities: [avail(1, 'available')]
     }));
     expect(m.teams[0].slots[0].chips.map((c) => c.label)).toEqual(['E', 'Mut.', '© Cap.']);
+  });
+
+  test('le capitaine de phase est marqué quand il joue', () => {
+    const m = buildModel(input({
+      compositions: [slot('E1', 1, 1), slot('E1', 2, 2)],
+      players: players([1, 2]),
+      availabilities: [avail(1, 'available'), avail(2, 'available')],
+      squads: [{ team_code: 'E1', phase: 1, player_id: 2, is_captain: true }]
+    }));
+    const labels = m.teams[0].slots.slice(0, 2).map((s) => s.chips.map((c) => c.label));
+    expect(labels).toEqual([[], ['© Cap.']]);
   });
 
   test('statut d’équipe : forfait, validée, complète, incomplète', () => {
