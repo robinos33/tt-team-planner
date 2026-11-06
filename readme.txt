@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,11 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
 
 == Changelog ==
+
+= 1.12.0 =
+* Feature: in Pré-Nationale, R1, R2 and R3, a team must field 4 players (LNATT regional rules, art. 4.6.2). A regional team with fewer than 4 players is flagged: a discreet "4 players required" while the round is more than 6 days away, then a red "3/4 · match lost" badge, a warning on the team tab and on the shared image. Fielding 3 players loses the match but is not a forfeit: declaring a forfeit for a team with players in its line-up now asks for confirmation.
+* Feature: an ⓘ button in the round view opens the burnage and qualification rules, in short with the full text on demand, for members without access to the settings.
+* Feature: the rules summary in the settings lists the complete-team rule.
 
 = 1.11.0 =
 * Feature: a "Dispos" tab in the round view lists every active player for the round, grouped by availability: available and not selected, available and selected (with their team), uncertain, no answer (with the SMS reminder) and unavailable. A header tells whether there are enough players: "31 available for 40 places · 6 without answer", forfeited teams left out.
@@ -154,6 +159,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.12.0 =
+Incomplete regional teams flagged, and the rules readable from the app. Check that each team's level is filled in the settings.
 
 = 1.11.0 =
 New "Dispos" tab in the round view: see at a glance who is available, selected or has not answered. Nothing to do.
