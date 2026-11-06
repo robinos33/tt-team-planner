@@ -22,6 +22,7 @@ $ttp_tables = [
     $wpdb->prefix . 'tttp_validated_rounds',
     $wpdb->prefix . 'tttp_magic_links',
     $wpdb->prefix . 'tttp_team_forfeits',
+    $wpdb->prefix . 'tttp_audit_log',
 ];
 
 foreach ($ttp_tables as $ttp_table) {

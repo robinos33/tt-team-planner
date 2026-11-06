@@ -8,6 +8,7 @@ use Brain\Monkey\Functions;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use TT\TeamPlanner\Rest\AuditLogController;
 use TT\TeamPlanner\Rest\AvailabilityController;
 use TT\TeamPlanner\Rest\MagicLinkController;
 use TT\TeamPlanner\Rest\ManifestController;
@@ -37,6 +38,7 @@ final class RoutePermissionsTest extends TestCase
     /** Opérations d'administration, hors du droit de gérer le planner. */
     private const ADMIN_ROUTES = [
         'DELETE /appearances/validate', // dévalide une journée
+        'GET /audit-log',               // journal des actions : administrateurs seulement
         'POST /appearances/import',
         'POST /players/sync',
         'POST /season/reset',
@@ -59,6 +61,7 @@ final class RoutePermissionsTest extends TestCase
         });
 
         foreach ([
+            AuditLogController::class,
             AvailabilityController::class,
             MagicLinkController::class,
             ManifestController::class,

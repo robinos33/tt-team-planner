@@ -4,7 +4,7 @@
  * Plugin Name: TT Team Planner
  * Plugin URI:  https://github.com/ustalencett/tt-team-planner
  * Description: Centralisez les disponibilités et préparez les compositions d'équipes pour votre club de tennis de table.
- * Version:     1.12.2
+ * Version:     1.13.0
  * Requires at least: 6.4
  * Requires PHP: 8.2
  * Author:      US Talence Tennis de Table
@@ -22,7 +22,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('TTP_VERSION', '1.12.2');
+define('TTP_VERSION', '1.13.0');
 define('TTP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('TTP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('TTP_PLUGIN_FILE', __FILE__);
@@ -55,6 +55,10 @@ $ttp_includes = [
     'includes/Repository/ValidatedRoundRepository.php',
     'includes/Repository/TeamForfeitRepository.php',
     'includes/Repository/SmsTemplateRepository.php',
+    'includes/Repository/AuditLogRepository.php',
+    'includes/Audit/AuditLookup.php',
+    'includes/Audit/AuditDescriber.php',
+    'includes/Audit/AuditRecorder.php',
     'includes/Sync/AppearanceImporter.php',
     'includes/Rest/PhaseSquadController.php',
     'includes/Rest/PlayersController.php',
@@ -68,6 +72,7 @@ $ttp_includes = [
     'includes/Rest/SeasonController.php',
     'includes/Rest/ManifestController.php',
     'includes/Rest/SmsTemplatesController.php',
+    'includes/Rest/AuditLogController.php',
     'includes/Front/Shortcode.php',
     'includes/Front/Assets.php',
     'includes/Front/StandaloneTemplate.php',

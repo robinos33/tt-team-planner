@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TT\TeamPlanner;
 
 use TT\TeamPlanner\Admin\BackOfficeGuard;
+use TT\TeamPlanner\Audit\AuditRecorder;
 use TT\TeamPlanner\Admin\SettingsPage;
 use TT\TeamPlanner\Front\Assets;
 use TT\TeamPlanner\Front\MagicLinkTemplate;
@@ -22,10 +23,13 @@ use TT\TeamPlanner\Rest\SyncController;
 use TT\TeamPlanner\Rest\SeasonController;
 use TT\TeamPlanner\Rest\ManifestController;
 use TT\TeamPlanner\Rest\SmsTemplatesController;
+use TT\TeamPlanner\Rest\AuditLogController;
 
 final class Plugin
 {
     private static ?Plugin $instance = null;
+
+    private AuditRecorder $audit;
 
     public static function getInstance(): self
     {
@@ -37,6 +41,11 @@ final class Plugin
 
     private function __construct()
     {
+        // Journal des actions : écritures de l'API, réglages du back-office et
+        // tâches automatiques (relances, import des feuilles de match).
+        $this->audit = new AuditRecorder();
+        $this->audit->register();
+
         add_action('plugins_loaded', [Activator::class, 'maybeUpgrade']);
         add_action('init', [$this, 'init']);
         add_action('rest_api_init', [$this, 'registerRestRoutes']);
@@ -76,12 +85,18 @@ final class Plugin
 
     public function sendAvailabilityReminders(): void
     {
-        (new AvailabilityReminder())->run();
+        $sent = (new AvailabilityReminder())->run();
+        if ($sent > 0) {
+            $this->audit->automatic('availability.remind', sprintf('a relancé %d joueur(s) sans réponse sur leurs dispos', $sent));
+        }
     }
 
     public function importAppearances(): void
     {
-        (new AppearanceImporter())->run();
+        $report = (new AppearanceImporter())->run();
+        if ($report['imported'] > 0) {
+            $this->audit->automatic('appearances.import', sprintf('a importé %d participation(s) depuis les feuilles de match', $report['imported']));
+        }
     }
 
     public function registerRestRoutes(): void
@@ -96,6 +111,7 @@ final class Plugin
         (new MagicLinkController())->registerRoutes();
         (new ManifestController())->registerRoutes();
         (new SmsTemplatesController())->registerRoutes();
+        (new AuditLogController())->registerRoutes();
     }
 
     public function registerAdminMenu(): void

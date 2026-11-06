@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.12.2
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,9 +48,15 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 
 = Who can edit the planner? =
 
-Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches and resetting the season remain reserved to administrators.
+Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches, resetting the season and reading the action history remain reserved to administrators.
 
 == Changelog ==
+
+= 1.13.0 =
+* Feature: pre-written SMS can be edited from the app settings, with a live preview. Each committee member edits their own copy; without one, they send the club template set in the dashboard, and can go back to it at any time.
+* Feature: the line-up confirmation SMS, so far never sent, can be sent to each player placed in a line-up, from the round view.
+* Feature: an action history shows administrators who changed what over the last 7 days: line-ups, availability, players, squads, forfeits, validations, settings, and players' answers through their link. It opens from each team header in the round view, or from the settings. Contact details are named when changed, never logged.
+* Fix: SMS variables were only replaced once, {nom} and {equipe} were not replaced in the availability request, and the date was written as 2026-11-07. Every occurrence is replaced and the date reads "samedi 7 novembre".
 
 = 1.12.2 =
 * Fix: in the Players tab selection mode, clicking the round check mark next to a player did not select them. The whole card now toggles the selection.
@@ -165,6 +171,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.13.0 =
+Pre-written SMS editable from the app, line-up confirmation SMS, and an action history for administrators. Nothing to do: the current SMS templates become the club templates.
 
 = 1.12.2 =
 Selecting players in bulk works when clicking the check mark.
