@@ -33,6 +33,17 @@ describe('body', () => {
   });
 });
 
+describe('formatDate', () => {
+  test('écrit la date en toutes lettres', () => {
+    expect(sms.formatDate('2026-11-07')).toBe('samedi 7 novembre');
+  });
+
+  test('laisse passer une valeur qui n’est pas une date ISO', () => {
+    expect(sms.formatDate('')).toBe('');
+    expect(sms.formatDate('07/11')).toBe('07/11');
+  });
+});
+
 describe('href', () => {
   test('retire les espaces du numéro et encode le texte', () => {
     expect(sms.href('06 12 34 56 78', 'Salut & à+')).toBe('sms:0612345678?body=Salut%20%26%20%C3%A0%2B');
