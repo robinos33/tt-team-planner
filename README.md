@@ -15,6 +15,7 @@ Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implé
 - ⓘ **Règles consultables depuis l'app** — le rappel des règles de brûlage et de qualification, sans accès au back-office
 - 📅 **Disponibilités** — chaque joueur renseigne ses disponibilités (dispo / indispo / incertain) ; l'onglet **Dispos** de la vue Journée montre qui est dispo, placé ou sans réponse
 - 👥 **Effectifs par phase** — ventilation des joueurs dans les équipes pour chaque demi-saison
+- © **Capitaines** — un capitaine de phase par équipe, choisi dans l'effectif ; il est capitaine de chaque journée où il joue, sauf si un autre joueur de la compo est nommé pour cette journée-là
 - 🔄 **Synchronisation FFTT** — import des licenciés depuis le plugin Mon Club TT
 - 📱 **Application mobile (PWA)** — installable sur iOS et Android, fonctionne hors ligne
 - 🌙 **Mode sombre** — thème clair/sombre
@@ -102,9 +103,11 @@ Base : `/wp-json/ttp/v1/`
 | `GET` | `/compositions` | Compositions `?season=&phase=&round=` |
 | `POST` | `/compositions` | Assigner un slot joueur |
 | `DELETE` | `/compositions` | Retirer un joueur d'un slot |
+| `POST` | `/compositions/captain` | Nommer le capitaine d'une journée, parmi les joueurs de la compo |
 | `GET` | `/phase-squads` | Effectifs d'une phase |
 | `POST` | `/phase-squads` | Affecter un joueur à une équipe |
 | `DELETE` | `/phase-squads` | Retirer de l'effectif |
+| `POST` | `/phase-squads/captain` | Nommer le capitaine de phase d'une équipe (`player_id` 0 : aucun) |
 | `POST` | `/phase-squads/ventilate` | Ventilation automatique |
 | `GET` | `/appearances/validate` | Statut de validation d'une journée |
 | `POST` | `/appearances/validate` | Valider une journée (génère les apparences) |
