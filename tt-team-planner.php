@@ -36,6 +36,8 @@ $ttp_includes = [
     'includes/Domain/Availability.php',
     'includes/Domain/TeamComposition.php',
     'includes/Domain/MagicLink.php',
+    'includes/Domain/Division.php',
+    'includes/Domain/QualificationRules.php',
     'includes/Repository/PlayerRepository.php',
     'includes/Repository/AvailabilityRepository.php',
     'includes/Repository/TeamCompositionRepository.php',
