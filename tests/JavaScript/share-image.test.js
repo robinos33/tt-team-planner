@@ -6,6 +6,7 @@ let buildModel;
 
 beforeAll(async () => {
   await import('../../assets/js/roster.js');
+  await import('../../assets/js/team-check.js');
   await import('../../assets/js/share-image.js');
   buildModel = window.TTPShareImage.buildModel;
 });
@@ -133,6 +134,32 @@ describe('buildModel', () => {
     }));
 
     expect(m.teams.map((t) => t.status.label)).toEqual(['Forfait', '✓ Validée', 'Complète', 'Incomplète 1/4']);
+  });
+
+  test('équipe régionale incomplète dans la semaine de la journée : rencontre perdue', () => {
+    const m = buildModel(input({
+      teams: [{ code: 'R', full_team_required: true }, { code: 'D', full_team_required: false }],
+      compositions: [slot('R', 1, 1), slot('R', 2, 2), slot('R', 3, 3), slot('D', 1, 4)],
+      players: players([1, 2, 3, 4]),
+      contexts: { R: { burnage: {}, validated: false }, D: { burnage: {}, validated: false } }
+    }));
+
+    expect(m.teams.map((t) => t.status)).toEqual([
+      { label: 'Incomplète 3/4 · rencontre perdue', tone: 'danger' },
+      { label: 'Incomplète 1/4', tone: 'warn' }
+    ]);
+  });
+
+  test('équipe régionale incomplète, journée lointaine : simple incomplète', () => {
+    const m = buildModel(input({
+      date: '2026-11-22',
+      teams: [{ code: 'R', full_team_required: true }],
+      compositions: [slot('R', 1, 1)],
+      players: players([1]),
+      contexts: { R: { burnage: {}, validated: false } }
+    }));
+
+    expect(m.teams[0].status).toEqual({ label: 'Incomplète 1/4', tone: 'warn' });
   });
 
   test('le compteur ignore les équipes forfait et les signale', () => {
