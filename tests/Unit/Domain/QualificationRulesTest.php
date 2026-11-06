@@ -32,6 +32,7 @@ final class QualificationRulesTest extends TestCase
         foreach (QualificationRules::all() as $rule) {
             self::assertContains($rule['status'], $statuses, $rule['title']);
             self::assertNotSame('', $rule['title']);
+            self::assertNotSame('', $rule['summary'], $rule['title']);
             self::assertNotSame('', $rule['reference'], $rule['title']);
             self::assertNotSame('', $rule['detail'], $rule['title']);
         }
