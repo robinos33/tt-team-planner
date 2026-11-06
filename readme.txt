@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,12 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches, resetting the season and reading the action history remain reserved to administrators.
 
 == Changelog ==
+
+= 1.14.0 =
+* Feature: each team has a phase captain, picked from its squad with the © button in the Squads screen. They are the captain of every round they play, without anything to copy.
+* Feature: in the round view, the captain carries the "© Cap." badge, and the © button next to any other player of the line-up makes them captain for that round only, for instance when the phase captain is away. A round where neither plays has no captain.
+* Feature: the shared line-up image marks each team's captain for the round.
+* Change: the "Captains" filter of the Players tab lists the phase captains. The former per-player captain flag, which nothing could set, is removed.
 
 = 1.13.0 =
 * Feature: pre-written SMS can be edited from the app settings, with a live preview. Each committee member edits their own copy; without one, they send the club template set in the dashboard, and can go back to it at any time.
@@ -171,6 +177,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.14.0 =
+Team captains, per phase and per round. Pick each team's phase captain in the Squads screen after updating.
 
 = 1.13.0 =
 Pre-written SMS editable from the app, line-up confirmation SMS, and an action history for administrators. Nothing to do: the current SMS templates become the club templates.
