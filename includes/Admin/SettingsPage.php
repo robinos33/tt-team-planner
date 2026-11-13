@@ -19,6 +19,7 @@ class SettingsPage
     public function registerSettings(): void
     {
         add_action('admin_post_ttp_create_front_page', [$this, 'handleCreateFrontPage']);
+        (new DataExporter())->register();
 
         register_setting('ttp_settings', 'ttp_club_name', ['sanitize_callback' => 'sanitize_text_field']);
         register_setting('ttp_settings', 'ttp_pwa_enabled', ['sanitize_callback' => [$this, 'sanitizeCheckbox']]);
@@ -206,6 +207,9 @@ class SettingsPage
 
         echo '<hr>';
         $this->renderImportSection();
+
+        echo '<hr>';
+        $this->renderExportSection();
         $this->renderSupportNotice();
         echo '</div>';
     }
@@ -451,6 +455,17 @@ class SettingsPage
         echo esc_html__('Contrôlé : l\'application détecte l\'infraction dans les compositions. Signalé : l\'information est affichée, la vérification reste manuelle. Non contrôlé : à vérifier par le capitaine.', 'tt-team-planner') . ' ';
         echo '<a href="' . esc_url('https://www.lnatt.fr/competitions/29-championnat-par-equipes') . '" target="_blank" rel="noopener">' . esc_html__('Règlements de la ligue', 'tt-team-planner') . ' &rarr;</a>';
         echo '</p>';
+    }
+
+    private function renderExportSection(): void
+    {
+        echo '<h2>' . esc_html__('Export des données', 'tt-team-planner') . '</h2>';
+        echo '<p class="description" style="max-width:960px">' . esc_html__('Télécharge toutes les données du plugin dans un fichier JSON : réglages, joueurs, disponibilités, compositions et capitaines, effectifs de phase, rencontres jouées, journées validées, forfaits, journal des actions et SMS personnels des membres. Les liens magiques ne sont pas exportés. Ce fichier sert à réimporter les données dans un autre outil, MonClubTT par exemple.', 'tt-team-planner') . '</p>';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<input type="hidden" name="action" value="' . esc_attr(DataExporter::ACTION) . '">';
+        wp_nonce_field(DataExporter::ACTION);
+        submit_button(__('Exporter en JSON', 'tt-team-planner'), 'secondary', 'submit', false);
+        echo '</form>';
     }
 
     private function renderRedirectNotice(): void
