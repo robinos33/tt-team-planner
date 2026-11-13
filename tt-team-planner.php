@@ -44,6 +44,7 @@ $ttp_includes = [
     'includes/Repository/MagicLinkRepository.php',
     'includes/Admin/SettingsPage.php',
     'includes/Admin/BackOfficeGuard.php',
+    'includes/Admin/DataExporter.php',
     'includes/Domain/PhaseSquad.php',
     'includes/Domain/MatchAppearance.php',
     'includes/Domain/AppearanceHistory.php',

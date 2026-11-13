@@ -227,6 +227,42 @@ Depuis **WP Admin → TT Team Planner → Réglages** :
 
 ---
 
+## Export des données (JSON)
+
+**WP Admin → TT Team Planner → Réglages → Export des données** télécharge un fichier `tt-team-planner-export-AAAA-MM-JJ-HHMMSS.json`, prévu pour être réimporté ailleurs (MonClubTT).
+
+```jsonc
+{
+  "format": "tt-team-planner-export",
+  "format_version": 1,
+  "plugin_version": "1.6.1",
+  "exported_at": "2026-11-13T10:00:00+00:00",   // UTC
+  "site_url": "https://…/",
+  "counts":  { "players": 463, "availabilities": 6, … },
+  "options": { "ttp_club_name": "…", "ttp_teams": [ … ], "ttp_journee_dates_p1": [ … ], … },
+  "tables": {
+    "players": [ … ],            // raw_payload restitué en objet
+    "availabilities": [ … ],
+    "team_compositions": [ … ],
+    "phase_squads": [ … ],
+    "match_appearances": [ … ],
+    "validated_rounds": [ … ],
+    "team_forfeits": [ … ],
+    "audit_log": [ … ]
+  },
+  "user_sms_templates": [        // SMS personnels (user meta)
+    { "user_id": 1, "user_login": "…", "user_email": "…", "availability": "…", "confirmation": null }
+  ]
+}
+```
+
+- Chaque table est exportée ligne à ligne avec les colonnes SQL d'origine (colonnes numériques typées en entier, dates au format MySQL `Y-m-d H:i:s`).
+- Les identifiants sont conservés : `player_id` renvoie à `players[].id`. À l'import, remapper les joueurs via `license_number` (ou `external_id`).
+- `validated_by`, `declared_by` et `audit_log[].user_id` sont des ID utilisateurs WordPress du site source ; `user_sms_templates` donne aussi le login et l'e-mail pour retrouver le compte.
+- Les liens magiques (`tttp_magic_links`) ne sont pas exportés.
+
+---
+
 ## Application mobile (PWA)
 
 L'application est installable sur mobile via le bandeau d'installation intégré :
