@@ -4,7 +4,7 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.14.0
+Stable tag: 1.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches, resetting the season and reading the action history remain reserved to administrators.
 
 == Changelog ==
+
+= 1.15.0 =
+* Feature: all plugin data can be exported as a JSON file from the settings ("Export data" section): settings, players, availabilities, line-ups and captains, phase squads, played matches, validated rounds, forfeits, the action log and members' own SMS templates. Magic links are not exported. Meant to re-import the data into another tool such as MonClubTT.
 
 = 1.14.0 =
 * Feature: each team has a phase captain, picked from its squad with the © button in the Squads screen. They are the captain of every round they play, without anything to copy.
@@ -177,6 +180,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.15.0 =
+Adds a JSON export of all plugin data, in the settings.
 
 = 1.14.0 =
 Team captains, per phase and per round. Pick each team's phase captain in the Squads screen after updating.
