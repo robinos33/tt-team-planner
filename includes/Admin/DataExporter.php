@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace TT\TeamPlanner\Admin;
 
-// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedNamespaceFound -- PSR-4, TT\TeamPlanner est le préfixe plugin
-
 /**
  * Export complet des données du plugin au format JSON, pour les réimporter
  * ailleurs (MonClubTT notamment). Les identifiants SQL sont conservés tels
