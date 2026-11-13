@@ -1,5 +1,14 @@
 # TT Team Planner
 
+> [!WARNING]
+> **Ce plugin n'est plus maintenu.** La gestion des équipes est intégrée à [MonClubTT](https://github.com/robinos33/MonClubTT/releases/latest) depuis sa version 2.0.0 (PHP 8.4 requis), qui reprend toutes les données de TT Team Planner.
+>
+> **Migrer :**
+> 1. Installer ou mettre à jour MonClubTT en 2.0.0 ou plus.
+> 2. Désactiver TT Team Planner **sans le supprimer** : sa suppression efface ses données.
+> 3. *Mon Club TT › Gestion des équipes › Import / export* : importer depuis TT Team Planner (ou depuis son fichier d'export JSON).
+> 4. Vérifier l'application, renvoyer les liens magiques aux joueurs, puis supprimer TT Team Planner.
+
 Plugin WordPress pour gérer les compositions d'équipes d'un club de **tennis de table** sur une saison de championnat par équipes.
 
 Développé par l'**US Talence Tennis de Table** (Nouvelle-Aquitaine), il implémente les règles de brûlage FFTT en vigueur dans la ligue.

@@ -67,6 +67,7 @@ final class Plugin
 
         if (is_admin()) {
             add_action('admin_menu', [$this, 'registerAdminMenu']);
+            (new \TT\TeamPlanner\Admin\DeprecationNotice())->register();
             add_action('admin_init', [$this, 'registerSettings']);
         }
     }

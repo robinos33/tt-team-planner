@@ -4,13 +4,15 @@ Tags: table tennis, team management, sports, club
 Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Manage team compositions and player availability for a table tennis club.
 
 == Description ==
+
+**This plugin is no longer maintained.** Team management is now built into [MonClubTT](https://github.com/robinos33/MonClubTT/releases/latest) 2.0.0+ (PHP 8.4 required), which imports all TT Team Planner data. To migrate: deactivate TT Team Planner without deleting it (deleting it erases its data), then use *Mon Club TT › Team management › Import / export* to import from TT Team Planner, check the app, re-send magic links, and only then delete TT Team Planner.
 
 TT Team Planner is a mobile-first web application embedded in WordPress via a shortcode. It helps table tennis club commissions manage:
 
@@ -51,6 +53,9 @@ Yes — the app is designed mobile-first. It installs as a PWA on iOS and Androi
 Any logged-in user can view it. Editing (line-ups, squads, availability, players, magic links) requires the planner management capability (`ttp_manage_planner`), which administrators and editors have. To let a member of the team committee manage the planner without access to the WordPress dashboard, give them the "Membre commission équipe" role: they are sent to the planner instead of wp-admin. Syncing players, importing matches, resetting the season and reading the action history remain reserved to administrators.
 
 == Changelog ==
+
+= 1.16.0 =
+* Changed: TT Team Planner is no longer maintained. A notice in the admin explains how to migrate to MonClubTT 2.0.0+, which includes team management and imports all the plugin data.
 
 = 1.15.0 =
 * Feature: all plugin data can be exported as a JSON file from the settings ("Export data" section): settings, players, availabilities, line-ups and captains, phase squads, played matches, validated rounds, forfeits, the action log and members' own SMS templates. Magic links are not exported. Meant to re-import the data into another tool such as MonClubTT.
@@ -180,6 +185,9 @@ Any logged-in user can view it. Editing (line-ups, squads, availability, players
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.16.0 =
+TT Team Planner is no longer maintained: migrate to MonClubTT 2.0.0+. Deactivate this plugin without deleting it, then import its data from MonClubTT.
 
 = 1.15.0 =
 Adds a JSON export of all plugin data, in the settings.
